@@ -2,16 +2,15 @@ package com.javashell.video.egressors;
 
 import java.awt.Dimension;
 import java.awt.image.BufferedImage;
-import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.util.HashSet;
 
-import com.javashell.flow.FlowNode;
 import com.javashell.video.VideoEgress;
-import com.javashell.video.VideoProcessor;
 
 import me.saharnooby.qoi.QOIImage;
 import me.saharnooby.qoi.QOIUtil;
@@ -108,6 +107,11 @@ public class QOIStreamEgressor extends VideoEgress {
 					}
 					lastTime = System.nanoTime();
 					curFrame = QOIUtilAWT.createFromBufferedImage(bufFrame0);
+					try {
+						QOIUtil.writeImage(curFrame, new File("/home/dan/test.qoi"));
+					} catch (Exception e) {
+
+					}
 				}
 			}
 		}

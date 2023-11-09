@@ -57,6 +57,9 @@
 extern "C" {
 #endif
 
+#include <stdint.h>
+#include <stddef.h>
+#include <stdbool.h>
 
 /* QOI OPCODES */
 
@@ -780,25 +783,3 @@ qoi_pixel_t qoi_decode_chunk(qoi_dec_t* dec)
 #endif /* SIMPLIFIED_QOI_IMPLEMENTATION */
 
 #endif /* SIMPLIFIED_QOI_H_IMPLEMENTATION */
-
-__kernel void encodeQOI(__global uchar* inputData, __global uchar* outputData, int width, int height, int channels, int dataSize) {
-    qoi_desc_t desc;
-    qoi_enc_t enc;
-    uint8_t* pixel_seek;
-
-    qoi_desc_init(&desc);
-    qoi_set_dimensions(&desc, width, height);
-    qoi_set_channels(&desc, channels);
-    qoi_set_colorspace(&desc, "RGB");
-
-    write_qoi_header(&desc, outputData);  
-
-    pixel_seek = inputData;
-    qoi_enc_init(&desc, &enc, outputData);
-
-    while(!qoi_enc_done(&enc))
-    {
-        qoi_encode_chunk(&desc, &enc, pixel_seek);
-        pixel_seek += desc.channels;
-    }
-}

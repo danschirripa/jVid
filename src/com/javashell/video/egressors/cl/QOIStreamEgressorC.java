@@ -4,23 +4,15 @@ import java.awt.Dimension;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.ByteBuffer;
-import java.nio.IntBuffer;
 import java.util.HashSet;
-import java.util.Scanner;
 
 import com.javashell.video.VideoEgress;
-import com.jogamp.opencl.CLBuffer;
-import com.jogamp.opencl.CLCommandQueue;
-import com.jogamp.opencl.CLContext;
-import com.jogamp.opencl.CLDevice;
-import com.jogamp.opencl.CLKernel;
-import com.jogamp.opencl.CLMemory;
-import com.jogamp.opencl.CLProgram;
 
-public class QOIStreamEgressor extends VideoEgress {
+public class QOIStreamEgressorC extends VideoEgress {
 	private ServerSocket server;
 	private static HashSet<Socket> clients;
 	private static byte[] encodedBuffer0, encodedBuffer1;
@@ -28,15 +20,25 @@ public class QOIStreamEgressor extends VideoEgress {
 	private static boolean isRunning;
 	private static long frameRateInterval = (long) 16.3 * 1000000;
 	private Thread serverThread, egressThread;
-	private static String clKernel = "";
 
-	public QOIStreamEgressor(Dimension resolution) {
-		super(resolution);
-		Scanner sc = new Scanner(QOIStreamEgressor.class.getResourceAsStream("/cl_QOIEncoder.cl"));
-		while (sc.hasNextLine()) {
-			clKernel += sc.nextLine() + "\n";
+	static {
+		try {
+			InputStream libQOIEncoderStream = QOIStreamEgressor.class.getResourceAsStream("/libQOIEncoder.so");
+			File libQOIEncoderFile = File.createTempFile("libQOIEncoder", ".so");
+			FileOutputStream libQOIEncoderOutputStream = new FileOutputStream(libQOIEncoderFile);
+			libQOIEncoderOutputStream.write(libQOIEncoderStream.readAllBytes());
+			libQOIEncoderOutputStream.flush();
+			libQOIEncoderOutputStream.close();
+			libQOIEncoderStream.close();
+			System.load(libQOIEncoderFile.getAbsolutePath());
+		} catch (Exception e) {
+			e.printStackTrace();
+			System.exit(-1);
 		}
-		System.out.println(clKernel);
+	}
+
+	public QOIStreamEgressorC(Dimension resolution) {
+		super(resolution);
 	}
 
 	@Override
@@ -45,68 +47,8 @@ public class QOIStreamEgressor extends VideoEgress {
 			return frame;
 
 		encodedBuffer0 = encodedBuffer1;
-		CLContext context = CLContext.create();
-		try {
-			CLDevice device = context.getMaxFlopsDevice();
-
-			CLCommandQueue queue = device.createCommandQueue();
-
-			CLProgram program = context.createProgram(clKernel);
-			program.build();
-			CLKernel kernel = program.createCLKernel("qoi_encode_kernel");
-
-			final byte[] inputImageData = convertBufferedImageToByteArray(frame);
-
-			// Create OpenCL memory buffers for input and output data
-			ByteBuffer imageBuffer = ByteBuffer.allocateDirect(inputImageData.length);
-			imageBuffer.put(inputImageData);
-			imageBuffer.rewind();
-			CLBuffer<ByteBuffer> imageCLBuffer = context.createByteBuffer(inputImageData.length,
-					CLMemory.Mem.READ_ONLY);
-			imageCLBuffer.use(imageBuffer);
-
-			// Create an OpenCL buffer for the qoi_rgba_t index
-			int numPixels = frame.getWidth() * frame.getHeight();
-
-			// Create an OpenCL buffer for the output data
-			ByteBuffer outputBuffer = ByteBuffer.allocateDirect(inputImageData.length);
-			CLBuffer<ByteBuffer> outputCLBuffer = context.createByteBuffer(inputImageData.length);
-			outputCLBuffer.use(outputBuffer);
-
-			// Create an OpenCL buffer for the final size of the encoded data
-			ByteBuffer finalSizeCL = ByteBuffer.allocateDirect(4);
-			CLBuffer<ByteBuffer> finalSizeCLBuffer = context.createByteBuffer(4);
-			finalSizeCLBuffer.use(finalSizeCL);
-
-			// Set up the OpenCL kernel arguments
-			int channels = 4; // Assuming the input image has 4 channels (RGBA)
-			kernel.setArg(0, imageCLBuffer).setArg(1, outputCLBuffer).setArg(2, frame.getWidth())
-					.setArg(3, frame.getHeight()).setArg(4, finalSizeCLBuffer);
-
-			queue.putWriteBuffer(imageCLBuffer, false).put1DRangeKernel(kernel, 0, numPixels, 0)
-					.putReadBuffer(outputCLBuffer, true).putReadBuffer(finalSizeCLBuffer, true);
-
-			outputBuffer.rewind();
-			int finalSize = finalSizeCLBuffer.getBuffer().getInt() / 4;
-			System.out.println(outputBuffer.remaining() + " : " + finalSize);
-
-			encodedBuffer1 = null;
-			encodedBuffer1 = new byte[finalSize];
-			outputBuffer.get(encodedBuffer1, 0, finalSize);
-
-			FileOutputStream fOut = new FileOutputStream(new File("/home/dan/tmp.qoi"));
-			fOut.write(encodedBuffer1);
-			System.exit(0);
-
-			imageCLBuffer.release();
-			finalSizeCLBuffer.release();
-			outputCLBuffer.release();
-			kernel.release();
-			program.release();
-			context.release();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+		byte[] frameBytes = convertBufferedImageToByteArray(frame);
+		encodedBuffer1 = encode(frameBytes, getResolution().width, getResolution().height, 4, 0);
 
 		return frame;
 	}
@@ -181,6 +123,8 @@ public class QOIStreamEgressor extends VideoEgress {
 		return true;
 	}
 
+	private native byte[] encode(byte[] data, int width, int height, int channels, int colorspace);
+
 	private byte[] intToBytes(int i) {
 		return ByteBuffer.allocate(4).putInt(i).array();
 	}
@@ -192,7 +136,7 @@ public class QOIStreamEgressor extends VideoEgress {
 				if (System.nanoTime() - lastTime >= frameRateInterval) {
 					try {
 						if (encodedBuffer0 == null) {
-							// System.out.println("null");
+							Thread.sleep(10);
 							continue;
 						}
 						final byte[] qoiBytes = encodedBuffer0;
