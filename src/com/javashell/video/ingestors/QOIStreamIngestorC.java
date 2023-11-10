@@ -106,6 +106,8 @@ public class QOIStreamIngestorC extends VideoIngestor {
 			while (true) {
 				if (System.nanoTime() - lastTime >= localizedFrameRateInterval) {
 					lastTime = System.nanoTime();
+					if (bufBytes0 == null)
+						continue;
 					ByteArrayInputStream bin = new ByteArrayInputStream(decode(bufBytes0));
 					try {
 						bufFrame = ImageIO.read(bin);
@@ -132,6 +134,8 @@ public class QOIStreamIngestorC extends VideoIngestor {
 			while (true) {
 				if (System.nanoTime() - lastTime >= localizedFrameRateInterval) {
 					lastTime = System.nanoTime();
+					if (bufBytes1 == null)
+						continue;
 					ByteArrayInputStream bin = new ByteArrayInputStream(decode(bufBytes1));
 					try {
 						bufFrame = ImageIO.read(bin);
