@@ -20,6 +20,13 @@ JNIEXPORT jbyteArray JNICALL Java_com_javashell_video_ingestors_QOIStreamIngesto
     seek = 0;
 
     qoi_dec_init(&desc, &dec, data, sizeof(data));
+
+    if (!read_qoi_header(&desc, data))
+    {
+        printf("The file you opened is not a QOIF file\n");
+        return NULL;
+    }
+
     bytes = (unsigned char*)malloc(raw_image_length * sizeof(unsigned char) + 4);
 
     while(!qoi_dec_done(&dec)){
