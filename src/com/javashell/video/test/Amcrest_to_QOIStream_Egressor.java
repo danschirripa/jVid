@@ -13,7 +13,7 @@ import com.javashell.video.camera.Camera;
 import com.javashell.video.camera.extras.AmcrestCameraInterface;
 import com.javashell.video.digestors.OpenCVAutoTrackerDigestor;
 import com.javashell.video.egressors.LocalWindowEgressor;
-import com.javashell.video.egressors.QOIStreamEgressor;
+import com.javashell.video.egressors.cl.QOIStreamEgressorC;
 
 public class Amcrest_to_QOIStream_Egressor {
 	public static void main(String[] args)
@@ -24,7 +24,7 @@ public class Amcrest_to_QOIStream_Egressor {
 				args[0], 4096000, IP2M_841);
 		OpenCVAutoTrackerDigestor auto = new OpenCVAutoTrackerDigestor(new Dimension(1920, 1080), IP2M_841);
 
-		QOIStreamEgressor egress = new QOIStreamEgressor(new Dimension(1920, 1080));
+		QOIStreamEgressorC egress = new QOIStreamEgressorC(new Dimension(1920, 1080));
 		LocalWindowEgressor preview = new LocalWindowEgressor(new Dimension(1920, 1080));
 
 		FlowNode<VideoProcessor> ingressNode = new VideoFlowNode(amc, null, null);

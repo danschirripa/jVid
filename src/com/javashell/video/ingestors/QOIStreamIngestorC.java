@@ -79,9 +79,7 @@ public class QOIStreamIngestorC extends VideoIngestor {
 			}
 			captureThread.start();
 			decoderThread0 = new Thread(new Decoder0Runnable());
-			decoderThread1 = new Thread(new Decoder1Runnable());
 			decoderThread0.start();
-			decoderThread1.start();
 			return true;
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -117,48 +115,20 @@ public class QOIStreamIngestorC extends VideoIngestor {
 						continue;
 					byte[] decodedImage = decode(bufBytes0, bufBytes0.length);
 					bufFrame = toBufferedImageAbgr(getResolution().width, getResolution().height, decodedImage);
+					decodedImage = null;
 				}
 			}
 		}
 	}
 
 	BufferedImage toBufferedImageAbgr(int width, int height, byte[] abgrData) {
-		DataBuffer dataBuffer = new DataBufferByte(abgrData, width * height * 4, 0);
-		ColorModel colorModel = new ComponentColorModel(ColorSpace.getInstance(ColorSpace.CS_sRGB),
+		final DataBuffer dataBuffer = new DataBufferByte(abgrData, width * height * 4, 0);
+		final ColorModel colorModel = new ComponentColorModel(ColorSpace.getInstance(ColorSpace.CS_sRGB),
 				new int[] { 8, 8, 8, 8 }, true, false, Transparency.OPAQUE, DataBuffer.TYPE_BYTE);
-		WritableRaster raster = Raster.createInterleavedRaster(dataBuffer, width, height, width * 4, 4,
+		final WritableRaster raster = Raster.createInterleavedRaster(dataBuffer, width, height, width * 4, 4,
 				new int[] { 3, 2, 1, 0 }, null);
-		BufferedImage image = new BufferedImage(colorModel, raster, false, null);
+		final BufferedImage image = new BufferedImage(colorModel, raster, false, null);
 		return image;
-	}
-
-	private class Decoder1Runnable implements Runnable {
-		private long localizedFrameRateInterval = frameRateInterval * 2;
-
-		public void run() {
-			try {
-				Thread.sleep(localizedFrameRateInterval);
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-			long lastTime = System.nanoTime();
-			while (true) {
-				if (System.nanoTime() - lastTime >= localizedFrameRateInterval) {
-					lastTime = System.nanoTime();
-					if (bufBytes1 == null)
-						continue;
-					System.out.println("DECODE BUF1");
-					ByteArrayInputStream bin = new ByteArrayInputStream(decode(bufBytes1, bufBytes1.length));
-					try {
-						bufFrame = ImageIO.read(bin);
-						bin.close();
-					} catch (Exception e) {
-						e.printStackTrace();
-						continue;
-					}
-				}
-			}
-		}
 	}
 
 	private native byte[] decode(byte[] image, int dataSize);
