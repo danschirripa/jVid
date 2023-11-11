@@ -5,7 +5,7 @@
 #include <cstdlib>
 
 JNIEXPORT jbyteArray JNICALL Java_com_javashell_video_ingestors_QOIStreamIngestorC_decode
-  (JNIEnv* env, jobject obj, jbyteArray encodedData){
+  (JNIEnv* env, jobject obj, jbyteArray encodedData, jint encodedDataSize){
     uint8_t* data = (uint8_t*) env->GetByteArrayElements(encodedData, NULL);
     qoi_desc_t desc;
     qoi_dec_t dec;
@@ -16,32 +16,40 @@ JNIEXPORT jbyteArray JNICALL Java_com_javashell_video_ingestors_QOIStreamIngesto
 
     qoi_desc_init(&desc);
     read_qoi_header(&desc, data);
-    raw_image_length = (size_t)desc.width * (size_t)desc.height * (size_t)desc.channels;
     seek = 0;
 
-    qoi_dec_init(&desc, &dec, data, sizeof(data));
+    qoi_dec_init(&desc, &dec, data, encodedDataSize);
 
     if (!read_qoi_header(&desc, data))
     {
         printf("The file you opened is not a QOIF file\n");
-        return NULL;
+        return encodedData;
     }
 
-    bytes = (unsigned char*)malloc(raw_image_length * sizeof(unsigned char) + 4);
+    raw_image_length = (size_t)desc.width * (size_t)desc.height * (size_t)desc.channels;
+    //printf("RAW IMAGE LENGTH %d\n", raw_image_length);
+    size_t bytes_length = (size_t) (raw_image_length * sizeof(unsigned char));
+
+    bytes = (unsigned char*)malloc(bytes_length);
 
     while(!qoi_dec_done(&dec)){
         px = qoi_decode_chunk(&dec);
-        bytes[seek] = px.red;
-        bytes[seek + 1] = px.green;
-        bytes[seek + 2] = px.blue;
 
-        if(desc.channels > 3)
-            bytes[seek + 3] = px.alpha;
+        if(desc.channels > 3){
+            bytes[seek] = px.alpha;
+        } else {
+            bytes[seek] = 255;
+        }
+
+        bytes[seek + 3] = px.red;
+        bytes[seek + 2] = px.green;
+        bytes[seek + 1] = px.blue;
 
         seek += desc.channels;
     }
-    jbyteArray decodedData = env->NewByteArray((jsize)(raw_image_length));
-    env->SetByteArrayRegion(decodedData, 0, (jsize)(raw_image_length), (jbyte*)bytes);
+
+    jbyteArray decodedData = env->NewByteArray((jsize)(bytes_length));
+    env->SetByteArrayRegion(decodedData, 0, (jsize)(bytes_length), (jbyte*)bytes);
     free(data);
     free(bytes);
     return decodedData;

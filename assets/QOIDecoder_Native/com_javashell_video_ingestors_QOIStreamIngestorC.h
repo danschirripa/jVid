@@ -13,7 +13,7 @@ extern "C" {
  * Signature: ([B)[B
  */
 JNIEXPORT jbyteArray JNICALL Java_com_javashell_video_ingestors_QOIStreamIngestorC_decode
-  (JNIEnv *, jobject, jbyteArray);
+  (JNIEnv *, jobject, jbyteArray, jint);
 
 #ifdef __cplusplus
 }

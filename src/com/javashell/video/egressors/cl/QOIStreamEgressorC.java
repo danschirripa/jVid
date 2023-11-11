@@ -137,6 +137,7 @@ public class QOIStreamEgressorC extends VideoEgress {
 					try {
 						if (encodedBuffer0 == null) {
 							Thread.sleep(10);
+							System.out.println("null");
 							continue;
 						}
 						final byte[] qoiBytes = encodedBuffer0;
