@@ -15,11 +15,13 @@ import com.javashell.video.VideoEgress;
 public class QOIStreamEgressorC extends VideoEgress {
 	private ServerSocket server;
 	private static HashSet<Socket> clients;
-	private static byte[] encodedBuffer0, encodedBuffer1;
+	private static byte[] encodedBuffer0;
+	private static BufferedImage bufFrame0, bufFrame1;
+	private static int lastBuf = 0;
 	private static long lastTime;
 	private static boolean isRunning;
-	private static long frameRateInterval = (long) 16.3 * 1000000;
-	private Thread serverThread, egressThread;
+	private static final long frameRateInterval = (long) 16.3 * 1000000;
+	private Thread serverThread, egressThread, encoderThread0, encoderThread1;
 
 	static {
 		try {
@@ -46,9 +48,13 @@ public class QOIStreamEgressorC extends VideoEgress {
 		if (frame == null)
 			return frame;
 
-		encodedBuffer0 = encodedBuffer1;
-		byte[] frameBytes = convertBufferedImageToByteArray(frame);
-		encodedBuffer1 = encode(frameBytes, getResolution().width, getResolution().height, 4, 0);
+		if (lastBuf == 0) {
+			lastBuf = 1;
+			bufFrame1 = frame;
+		} else {
+			lastBuf = 0;
+			bufFrame0 = frame;
+		}
 
 		return frame;
 	}
@@ -72,7 +78,15 @@ public class QOIStreamEgressorC extends VideoEgress {
 					}
 				}
 			});
+			serverThread.setName("QOI_Server");
+			encoderThread0 = new Thread(new EncoderThread0());
+			encoderThread1 = new Thread(new EncoderThread1());
+			encoderThread0.setName("QOI_Enc0");
+			encoderThread1.setName("QOI_Enc1");
 			egressThread = new Thread(new EgressRunnable());
+			egressThread.setName("QOI_Egress");
+			encoderThread0.start();
+			encoderThread1.start();
 			serverThread.start();
 			egressThread.start();
 
@@ -129,8 +143,100 @@ public class QOIStreamEgressorC extends VideoEgress {
 		return ByteBuffer.allocate(4).putInt(i).array();
 	}
 
-	private class EgressRunnable implements Runnable {
+	private class EncoderThread0 implements Runnable {
+		private long localizedFrameRateInterval = frameRateInterval * 2;
+		private long localizedFrameRateMS = 0;
+		private int localizedFrameRateNS = 0;
+
 		public void run() {
+			if (localizedFrameRateInterval > 999999) {
+				localizedFrameRateMS = localizedFrameRateInterval / 1000000;
+				localizedFrameRateNS = (int) (localizedFrameRateInterval % 1000000);
+			} else
+				localizedFrameRateNS = (int) localizedFrameRateInterval;
+			long lastTime = System.nanoTime();
+			while (true) {
+				if (System.nanoTime() - lastTime >= localizedFrameRateInterval) {
+					lastTime = System.nanoTime();
+					if (bufFrame0 == null) {
+						System.out.println("0 null");
+						continue;
+					}
+					lastTime = System.nanoTime();
+					final byte[] frameBytes = convertBufferedImageToByteArray(bufFrame0);
+					encodedBuffer0 = encode(frameBytes, getResolution().width, getResolution().height, 4, 0);
+					try {
+						Thread.sleep(localizedFrameRateMS, localizedFrameRateNS);
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+				}
+			}
+
+		}
+	}
+
+	private class EncoderThread1 implements Runnable {
+		private long localizedFrameRateInterval = frameRateInterval * 2;
+		private long localizedFrameRateMS = 0;
+		private int localizedFrameRateNS = 0;
+
+		public void run() {
+			if (localizedFrameRateInterval > 999999) {
+				localizedFrameRateMS = localizedFrameRateInterval / 1000000;
+				localizedFrameRateNS = (int) (localizedFrameRateInterval % 1000000);
+			} else
+				localizedFrameRateNS = (int) localizedFrameRateInterval;
+
+			long firstRunDelayMS = 0;
+			int firstRunDelayNS = 0;
+			long firstRunDelayTotal = localizedFrameRateInterval / 2;
+
+			if (firstRunDelayTotal > 999999) {
+				firstRunDelayMS = firstRunDelayTotal / 1000000;
+				firstRunDelayNS = (int) (firstRunDelayTotal % 1000000);
+			} else
+				firstRunDelayNS = (int) localizedFrameRateInterval;
+
+			try {
+				Thread.sleep(firstRunDelayMS, firstRunDelayNS);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			long lastTime = System.nanoTime();
+			while (true) {
+				if (System.nanoTime() - lastTime >= localizedFrameRateInterval) {
+					lastTime = System.nanoTime();
+					if (bufFrame1 == null) {
+						System.out.println("1 null");
+						continue;
+					}
+					lastTime = System.nanoTime();
+					final byte[] frameBytes = convertBufferedImageToByteArray(bufFrame1);
+					encodedBuffer0 = encode(frameBytes, getResolution().width, getResolution().height, 4, 0);
+					try {
+						Thread.sleep(localizedFrameRateMS, localizedFrameRateNS);
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+				}
+			}
+		}
+
+	}
+
+	private class EgressRunnable implements Runnable {
+		private long frameRateMS = 0;
+		private int frameRateNS = 0;
+
+		public void run() {
+
+			if (frameRateInterval > 999999) {
+				frameRateMS = frameRateInterval / 1000000;
+				frameRateNS = (int) (frameRateInterval % 1000000);
+			} else
+				frameRateNS = (int) frameRateInterval;
+
 			lastTime = System.nanoTime();
 			while (isRunning) {
 				if (System.nanoTime() - lastTime >= frameRateInterval) {
@@ -151,6 +257,7 @@ public class QOIStreamEgressorC extends VideoEgress {
 							}
 
 						}
+						Thread.sleep(frameRateMS, frameRateNS);
 					} catch (Exception e) {
 						e.printStackTrace();
 						;

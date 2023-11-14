@@ -147,6 +147,10 @@ public class QOIStreamEgressor extends VideoEgress {
 			while (isRunning) {
 				if (System.nanoTime() - lastTime >= frameRateInterval) {
 					try {
+						if (curFrame == null) {
+							System.out.println("null");
+							continue;
+						}
 						final ByteArrayOutputStream bOut = new ByteArrayOutputStream();
 						QOIUtil.writeImage(curFrame, bOut);
 						bOut.flush();

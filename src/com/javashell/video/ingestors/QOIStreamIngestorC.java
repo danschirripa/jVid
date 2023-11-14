@@ -79,7 +79,9 @@ public class QOIStreamIngestorC extends VideoIngestor {
 			}
 			captureThread.start();
 			decoderThread0 = new Thread(new Decoder0Runnable());
+			decoderThread1 = new Thread(new Decoder1Runnable());
 			decoderThread0.start();
+			decoderThread1.start();
 			return true;
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -105,17 +107,80 @@ public class QOIStreamIngestorC extends VideoIngestor {
 
 	private class Decoder0Runnable implements Runnable {
 		private long localizedFrameRateInterval = frameRateInterval * 2;
+		private long localizedFrameRateMS = 0;
+		private int localizedFrameRateNS = 0;
 
 		public void run() {
+			if (localizedFrameRateInterval > 999999) {
+				localizedFrameRateMS = localizedFrameRateInterval / 1000000;
+				localizedFrameRateNS = (int) (localizedFrameRateInterval % 1000000);
+			} else
+				localizedFrameRateNS = (int) localizedFrameRateInterval;
 			long lastTime = System.nanoTime();
 			while (true) {
 				if (System.nanoTime() - lastTime >= localizedFrameRateInterval) {
-					lastTime = System.nanoTime();
-					if (bufBytes0 == null)
+					if (bufBytes0 == null) {
+						System.out.println("0 null");
 						continue;
+					}
+					lastTime = System.nanoTime();
 					byte[] decodedImage = decode(bufBytes0, bufBytes0.length);
 					bufFrame = toBufferedImageAbgr(getResolution().width, getResolution().height, decodedImage);
 					decodedImage = null;
+					try {
+						Thread.sleep(localizedFrameRateMS, localizedFrameRateNS);
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+				}
+			}
+		}
+	}
+
+	private class Decoder1Runnable implements Runnable {
+		private long localizedFrameRateInterval = frameRateInterval * 2;
+		private long localizedFrameRateMS = 0;
+		private int localizedFrameRateNS = 0;
+
+		public void run() {
+			if (localizedFrameRateInterval > 999999) {
+				localizedFrameRateMS = localizedFrameRateInterval / 1000000;
+				localizedFrameRateNS = (int) (localizedFrameRateInterval % 1000000);
+			} else
+				localizedFrameRateNS = (int) localizedFrameRateInterval;
+
+			long firstRunDelayMS = 0;
+			int firstRunDelayNS = 0;
+			long firstRunDelayTotal = localizedFrameRateInterval / 2;
+
+			if (firstRunDelayTotal > 999999) {
+				firstRunDelayMS = firstRunDelayTotal / 1000000;
+				firstRunDelayNS = (int) (firstRunDelayTotal % 1000000);
+			} else
+				firstRunDelayNS = (int) localizedFrameRateInterval;
+
+			try {
+				Thread.sleep(firstRunDelayMS, firstRunDelayNS);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			long lastTime = System.nanoTime();
+			while (true) {
+				if (System.nanoTime() - lastTime >= localizedFrameRateInterval) {
+					if (bufBytes1 == null) {
+						System.out.println("0 null");
+						continue;
+					}
+					lastTime = System.nanoTime();
+					byte[] decodedImage = decode(bufBytes1, bufBytes1.length);
+					bufFrame = toBufferedImageAbgr(getResolution().width, getResolution().height, decodedImage);
+					decodedImage = null;
+					try {
+						Thread.sleep(localizedFrameRateMS, localizedFrameRateNS);
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
 				}
 			}
 		}
