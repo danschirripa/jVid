@@ -25,7 +25,14 @@ public class QOIStreamEgressorC extends VideoEgress {
 
 	static {
 		try {
-			InputStream libQOIEncoderStream = QOIStreamEgressor.class.getResourceAsStream("/libQOIEncoder.so");
+			String arch = System.getProperty("os.arch");
+			String prefix = "amd64";
+			System.out.println(arch);
+			if (arch.equals("aarch64")) {
+				prefix = "aarch64";
+			}
+			InputStream libQOIEncoderStream = QOIStreamEgressor.class
+					.getResourceAsStream("/" + prefix + "/libQOIEncoder.so");
 			File libQOIEncoderFile = File.createTempFile("libQOIEncoder", ".so");
 			FileOutputStream libQOIEncoderOutputStream = new FileOutputStream(libQOIEncoderFile);
 			libQOIEncoderOutputStream.write(libQOIEncoderStream.readAllBytes());

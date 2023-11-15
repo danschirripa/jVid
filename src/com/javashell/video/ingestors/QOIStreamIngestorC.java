@@ -39,7 +39,14 @@ public class QOIStreamIngestorC extends VideoIngestor {
 
 	static {
 		try {
-			InputStream libQOIDecoderStream = QOIStreamIngestorC.class.getResourceAsStream("/libQOIDecoder.so");
+			String arch = System.getProperty("os.arch");
+			String prefix = "amd64";
+			System.out.println(arch); 
+			if (arch.equals("aarch64")) {
+				prefix = "aarch64";
+			}
+			InputStream libQOIDecoderStream = QOIStreamIngestorC.class
+					.getResourceAsStream("/" + prefix + "/libQOIDecoder.so");
 			File libQOIDecoderFile = File.createTempFile("libQOIDecoder", ".so");
 			FileOutputStream libQOIDecoderOutputStream = new FileOutputStream(libQOIDecoderFile);
 			libQOIDecoderOutputStream.write(libQOIDecoderStream.readAllBytes());
