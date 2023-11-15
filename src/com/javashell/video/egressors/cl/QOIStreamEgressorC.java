@@ -17,7 +17,7 @@ public class QOIStreamEgressorC extends VideoEgress {
 	private static HashSet<Socket> clients;
 	private static byte[] encodedBuffer0;
 	private static BufferedImage bufFrame0, bufFrame1;
-	private static int lastBuf = 0;
+	private static int lastBuf = 1;
 	private static long lastTime;
 	private static boolean isRunning;
 	private static final long frameRateInterval = (long) 16.3 * 1000000;
