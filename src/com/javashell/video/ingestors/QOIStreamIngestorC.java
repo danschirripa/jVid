@@ -1,6 +1,8 @@
 package com.javashell.video.ingestors;
 
 import java.awt.Dimension;
+import java.awt.GraphicsConfiguration;
+import java.awt.GraphicsEnvironment;
 import java.awt.Transparency;
 import java.awt.color.ColorSpace;
 import java.awt.image.BufferedImage;
@@ -9,9 +11,9 @@ import java.awt.image.ComponentColorModel;
 import java.awt.image.DataBuffer;
 import java.awt.image.DataBufferByte;
 import java.awt.image.Raster;
+import java.awt.image.VolatileImage;
 import java.awt.image.WritableRaster;
 import java.io.BufferedInputStream;
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
@@ -20,28 +22,27 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.ByteBuffer;
 
-import javax.imageio.ImageIO;
-
 import com.javashell.video.VideoIngestor;
 
 public class QOIStreamIngestorC extends VideoIngestor {
 	private String ip;
 	private int port;
 	private Socket sock;
-	private BufferedImage curFrame, bufFrame;
+	private BufferedImage curFrame;
+	VolatileImage bufFrame;
 	private Runnable unicastRunner, multicastRunner;
 	private Thread decoderThread0, decoderThread1;
 	private static boolean isOpen;
 	private static long frameRateInterval = (long) 16.3 * 1000000;
 	private static byte[] bufBytes0, bufBytes1;
-	private static int lastBufByte = 0;
+	private static int lastBufByte = 1;
 	private boolean isMulticast = false;
 
 	static {
 		try {
 			String arch = System.getProperty("os.arch");
 			String prefix = "amd64";
-			System.out.println(arch); 
+			System.out.println(arch);
 			if (arch.equals("aarch64")) {
 				prefix = "aarch64";
 			}
@@ -69,13 +70,17 @@ public class QOIStreamIngestorC extends VideoIngestor {
 
 	@Override
 	public BufferedImage processFrame(BufferedImage frame) {
-		curFrame = bufFrame;
+		curFrame.getGraphics().drawImage(bufFrame, 0, 0, bufFrame.getWidth(), bufFrame.getHeight(), null);
 		return curFrame;
 	}
 
 	@Override
 	public boolean open() {
 		try {
+			GraphicsConfiguration gc = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice()
+					.getDefaultConfiguration();
+			bufFrame = gc.createCompatibleVolatileImage(getResolution().width, getResolution().height);
+			curFrame = gc.createCompatibleImage(getResolution().width, getResolution().height);
 			sock.connect(new InetSocketAddress(ip, port));
 			Thread captureThread;
 			isOpen = true;
@@ -132,7 +137,9 @@ public class QOIStreamIngestorC extends VideoIngestor {
 					}
 					lastTime = System.nanoTime();
 					byte[] decodedImage = decode(bufBytes0, bufBytes0.length);
-					bufFrame = toBufferedImageAbgr(getResolution().width, getResolution().height, decodedImage);
+					bufFrame.getGraphics().drawImage(
+							toBufferedImageAbgr(getResolution().width, getResolution().height, decodedImage), 0, 0,
+							getResolution().width, getResolution().height, null);
 					decodedImage = null;
 					try {
 						Thread.sleep(localizedFrameRateMS, localizedFrameRateNS);
@@ -181,7 +188,9 @@ public class QOIStreamIngestorC extends VideoIngestor {
 					}
 					lastTime = System.nanoTime();
 					byte[] decodedImage = decode(bufBytes1, bufBytes1.length);
-					bufFrame = toBufferedImageAbgr(getResolution().width, getResolution().height, decodedImage);
+					bufFrame.getGraphics().drawImage(
+							toBufferedImageAbgr(getResolution().width, getResolution().height, decodedImage), 0, 0,
+							getResolution().width, getResolution().height, null);
 					decodedImage = null;
 					try {
 						Thread.sleep(localizedFrameRateMS, localizedFrameRateNS);
