@@ -141,7 +141,10 @@ public class QOIStreamIngestorC extends VideoIngestor {
 			decNum = num;
 			if (decNum == decoderThreads.length) {
 				nextNum = 0;
+			} else {
+				nextNum = decNum + 1;
 			}
+
 		}
 
 		public void run() {
