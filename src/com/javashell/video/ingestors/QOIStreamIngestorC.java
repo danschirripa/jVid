@@ -68,7 +68,9 @@ public class QOIStreamIngestorC extends VideoIngestor {
 
 	@Override
 	public BufferedImage processFrame(BufferedImage frame) {
-		curFrame = bufFrame;
+		if (lastBufByte == 1) {
+			return bufFrame;
+		}
 		return curFrame;
 	}
 
@@ -138,7 +140,7 @@ public class QOIStreamIngestorC extends VideoIngestor {
 				}
 				lastTime = System.nanoTime();
 				byte[] decodedImage = decode(bufBytes0, bufBytes0.length);
-				bufFrame = toBufferedImageAbgr(getResolution().width, getResolution().height, decodedImage);
+				curFrame = toBufferedImageAbgr(getResolution().width, getResolution().height, decodedImage);
 				decodedImage = null;
 				try {
 					Thread.sleep(localizedFrameRateMS, localizedFrameRateNS);
