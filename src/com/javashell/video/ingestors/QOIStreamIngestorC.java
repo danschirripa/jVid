@@ -180,8 +180,9 @@ public class QOIStreamIngestorC extends VideoIngestor {
 
 			long lastTime = System.nanoTime();
 			while (true) {
-				if (System.nanoTime() - lastTime > localizedFrameRateInterval) {
-					System.err.println("Decoder 1 took too long between frames");
+				long deltaTime = System.nanoTime() - lastTime;
+				if (deltaTime > localizedFrameRateInterval) {
+					System.err.println("Decoder 1 took too long between frames - " + deltaTime);
 				}
 				if (bufBytes1 == null) {
 					System.out.println("1 null");
