@@ -30,12 +30,15 @@ public class QOIStreamIngestorC extends VideoIngestor {
 	private BufferedImage curFrame, bufFrame;
 	private Runnable unicastRunner, multicastRunner;
 	private Thread decoderThread0, decoderThread1;
+	private Thread[] decoderThreads;
 	private static boolean isOpen;
 	private static long frameRateInterval = (long) 16.3 * 1000000;
 	private static byte[] bufBytes0, bufBytes1;
+	private static byte[][] bufBytes;
 	private static int lastBufByte = 1;
 	private boolean isMulticast = false;
 	private static final String wait0 = "0", wait1 = "1";
+	private static String[] wait;
 
 	static {
 		try {
@@ -61,10 +64,25 @@ public class QOIStreamIngestorC extends VideoIngestor {
 	}
 
 	public QOIStreamIngestorC(Dimension resolution, String ip, int port, boolean isMulticast) {
+		this(resolution, ip, port, isMulticast, 2);
+	}
+
+	public QOIStreamIngestorC(Dimension resolution, String ip, int port, boolean isMulticast, int numThreads) {
 		super(resolution);
 		this.ip = ip;
 		this.port = port;
 		this.sock = new Socket();
+		this.decoderThreads = new Thread[numThreads];
+		bufBytes = new byte[numThreads][];
+		wait = new String[numThreads];
+
+		for (int i = 0; i < numThreads; i++) {
+			wait[i] = "" + i;
+
+			Thread decThread = new Thread(new DecoderRunnable(i));
+			decThread.setName("Dec" + i);
+			decoderThreads[i] = decThread;
+		}
 	}
 
 	@Override
@@ -88,12 +106,10 @@ public class QOIStreamIngestorC extends VideoIngestor {
 				captureThread = new Thread(new UnicastRunnable());
 			}
 			captureThread.start();
-			decoderThread0 = new Thread(new Decoder0Runnable());
-			decoderThread1 = new Thread(new Decoder1Runnable());
-			decoderThread0.setName("Dec0");
-			decoderThread1.setName("Dec1");
-			decoderThread0.start();
-			decoderThread1.start();
+
+			for (Thread t : decoderThreads) {
+				t.start();
+			}
 			return true;
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -117,102 +133,40 @@ public class QOIStreamIngestorC extends VideoIngestor {
 		return ByteBuffer.wrap(b).getInt();
 	}
 
-	private class Decoder0Runnable implements Runnable {
-		private long localizedFrameRateInterval = frameRateInterval * 2;
-		private long localizedFrameRateMS = 0;
-		private int localizedFrameRateNS = 0;
+	private class DecoderRunnable implements Runnable {
 		private int width = getResolution().width, height = getResolution().height;
+		private int decNum, nextNum;
 
-		public void run() {
-			if (localizedFrameRateInterval > 999999) {
-				localizedFrameRateMS = localizedFrameRateInterval / 1000000;
-				localizedFrameRateNS = (int) (localizedFrameRateInterval % 1000000);
-			} else
-				localizedFrameRateNS = (int) localizedFrameRateInterval;
-			long lastTime = System.nanoTime();
-			while (true) {
-				if (System.nanoTime() - lastTime > localizedFrameRateInterval) {
-					System.err.println("Decoder 0 took too long between frames");
-				}
-				if (bufBytes0 == null) {
-					System.out.println("0 null");
-					continue;
-				}
-				lastTime = System.nanoTime();
-				byte[] decodedImage = decode(bufBytes0, bufBytes0.length);
-				final BufferedImage tmpFrame = toBufferedImageAbgr(width, height, decodedImage);
-				synchronized (bufFrame) {
-					bufFrame = tmpFrame;
-				}
-				decodedImage = null;
-				synchronized (wait1) {
-					wait1.notify();
-				}
-				synchronized (wait0) {
-					try {
-						wait0.wait();
-					} catch (Exception e) {
-						e.printStackTrace();
-					}
-				}
-				lastTime = System.nanoTime();
+		public DecoderRunnable(int num) {
+			decNum = num;
+			if (decNum == decoderThreads.length) {
+				nextNum = 0;
 			}
 		}
-	}
-
-	private class Decoder1Runnable implements Runnable {
-		private long localizedFrameRateInterval = frameRateInterval * 2;
-		private long localizedFrameRateMS = 0;
-		private int localizedFrameRateNS = 0;
-		private int width = getResolution().width, height = getResolution().height;
 
 		public void run() {
-			if (localizedFrameRateInterval > 999999) {
-				localizedFrameRateMS = localizedFrameRateInterval / 1000000;
-				localizedFrameRateNS = (int) (localizedFrameRateInterval % 1000000);
-			} else
-				localizedFrameRateNS = (int) localizedFrameRateInterval;
-
-			long firstRunDelayMS = 0;
-			int firstRunDelayNS = 0;
-			long firstRunDelayTotal = localizedFrameRateInterval / 2;
-
-			if (firstRunDelayTotal > 999999) {
-				firstRunDelayMS = firstRunDelayTotal / 1000000;
-				firstRunDelayNS = (int) (firstRunDelayTotal % 1000000);
-			} else
-				firstRunDelayNS = (int) localizedFrameRateInterval;
-
-			try {
-				Thread.sleep(firstRunDelayMS, firstRunDelayNS);
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-
 			long lastTime = System.nanoTime();
 			while (true) {
-				long deltaTime = System.nanoTime() - lastTime;
-				if (deltaTime > localizedFrameRateInterval) {
-					System.err.println("Decoder 1 took too long between frames - "
-							+ (deltaTime - localizedFrameRateInterval) + "ns");
+				if (System.nanoTime() - lastTime > frameRateInterval) {
+					System.err.println("Decoder " + decNum + " took too long between frames");
 				}
-				if (bufBytes1 == null) {
-					System.out.println("1 null");
+				if (bufBytes[decNum] == null) {
+					System.out.println(decNum + " null");
 					continue;
 				}
 				lastTime = System.nanoTime();
-				byte[] decodedImage = decode(bufBytes1, bufBytes1.length);
+				byte[] decodedImage = decode(bufBytes[decNum], bufBytes[decNum].length);
 				final BufferedImage tmpFrame = toBufferedImageAbgr(width, height, decodedImage);
 				synchronized (bufFrame) {
 					bufFrame = tmpFrame;
 				}
 				decodedImage = null;
-				synchronized (wait0) {
-					wait0.notify();
+				synchronized (wait[nextNum]) {
+					wait[nextNum].notify();
 				}
-				synchronized (wait1) {
+				synchronized (wait[decNum]) {
 					try {
-						wait1.wait();
+						wait[decNum].wait();
 					} catch (Exception e) {
 						e.printStackTrace();
 					}
@@ -251,13 +205,12 @@ public class QOIStreamIngestorC extends VideoIngestor {
 						}
 						final int size = bytesToInt(sizeBytes);
 						final byte[] imageBytes = in.readNBytes(size);
-						if (lastBufByte == 0) {
-							bufBytes1 = imageBytes;
-							lastBufByte = 1;
-						} else {
-							bufBytes0 = imageBytes;
+						if (lastBufByte == decoderThreads.length) {
 							lastBufByte = 0;
+						} else {
+							lastBufByte++;
 						}
+						bufBytes[lastBufByte] = imageBytes;
 					} catch (Exception e) {
 						e.printStackTrace();
 						in.readAllBytes();
