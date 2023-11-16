@@ -89,6 +89,8 @@ public class QOIStreamIngestorC extends VideoIngestor {
 			captureThread.start();
 			decoderThread0 = new Thread(new Decoder0Runnable());
 			decoderThread1 = new Thread(new Decoder1Runnable());
+			decoderThread0.setName("Dec0");
+			decoderThread1.setName("Dec1");
 			decoderThread0.start();
 			decoderThread1.start();
 			return true;
