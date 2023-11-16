@@ -134,10 +134,14 @@ public class QOIStreamIngestor extends VideoIngestor {
 			try {
 				BufferedInputStream in = new BufferedInputStream(sock.getInputStream());
 				OutputStream out = sock.getOutputStream();
+				long lastTime = System.currentTimeMillis();
 				while (!sock.isClosed()) {
 					try {
 						final byte[] sizeBytes = new byte[4];
 						in.read(sizeBytes);
+						if (System.currentTimeMillis() - lastTime > frameRateInterval) {
+							System.err.println("Stream is not being served at specified rate");
+						}
 						final int size = bytesToInt(sizeBytes);
 						final byte[] imageBytes = in.readNBytes(size);
 						if (lastBufByte == 0) {
@@ -152,6 +156,7 @@ public class QOIStreamIngestor extends VideoIngestor {
 						in.readAllBytes();
 						out.write((byte) 0);
 					}
+					lastTime = System.currentTimeMillis();
 				}
 			} catch (Exception e) {
 				e.printStackTrace();
