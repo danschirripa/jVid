@@ -11,7 +11,6 @@ import java.awt.image.ComponentColorModel;
 import java.awt.image.DataBuffer;
 import java.awt.image.DataBufferByte;
 import java.awt.image.Raster;
-import java.awt.image.VolatileImage;
 import java.awt.image.WritableRaster;
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -128,21 +127,23 @@ public class QOIStreamIngestorC extends VideoIngestor {
 				localizedFrameRateNS = (int) localizedFrameRateInterval;
 			long lastTime = System.nanoTime();
 			while (true) {
-				if (System.nanoTime() - lastTime >= localizedFrameRateInterval) {
-					if (bufBytes0 == null) {
-						System.out.println("0 null");
-						continue;
-					}
-					lastTime = System.nanoTime();
-					byte[] decodedImage = decode(bufBytes0, bufBytes0.length);
-					bufFrame = toBufferedImageAbgr(getResolution().width, getResolution().height, decodedImage);
-					decodedImage = null;
-					try {
-						Thread.sleep(localizedFrameRateMS, localizedFrameRateNS);
-					} catch (Exception e) {
-						e.printStackTrace();
-					}
+				if (System.nanoTime() - lastTime > localizedFrameRateInterval) {
+					System.err.println("Decoder 0 took too long between frames");
 				}
+				if (bufBytes0 == null) {
+					System.out.println("0 null");
+					continue;
+				}
+				lastTime = System.nanoTime();
+				byte[] decodedImage = decode(bufBytes0, bufBytes0.length);
+				bufFrame = toBufferedImageAbgr(getResolution().width, getResolution().height, decodedImage);
+				decodedImage = null;
+				try {
+					Thread.sleep(localizedFrameRateMS, localizedFrameRateNS);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+				lastTime = System.nanoTime();
 			}
 		}
 	}
@@ -177,20 +178,21 @@ public class QOIStreamIngestorC extends VideoIngestor {
 
 			long lastTime = System.nanoTime();
 			while (true) {
-				if (System.nanoTime() - lastTime >= localizedFrameRateInterval) {
-					if (bufBytes1 == null) {
-						System.out.println("0 null");
-						continue;
-					}
-					lastTime = System.nanoTime();
-					byte[] decodedImage = decode(bufBytes1, bufBytes1.length);
-					bufFrame = toBufferedImageAbgr(getResolution().width, getResolution().height, decodedImage);
-					decodedImage = null;
-					try {
-						Thread.sleep(localizedFrameRateMS, localizedFrameRateNS);
-					} catch (Exception e) {
-						e.printStackTrace();
-					}
+				if (System.nanoTime() - lastTime > localizedFrameRateInterval) {
+					System.err.println("Decoder 1 took too long between frames");
+				}
+				if (bufBytes1 == null) {
+					System.out.println("1 null");
+					continue;
+				}
+				lastTime = System.nanoTime();
+				byte[] decodedImage = decode(bufBytes1, bufBytes1.length);
+				bufFrame = toBufferedImageAbgr(getResolution().width, getResolution().height, decodedImage);
+				decodedImage = null;
+				try {
+					Thread.sleep(localizedFrameRateMS, localizedFrameRateNS);
+				} catch (Exception e) {
+					e.printStackTrace();
 				}
 			}
 		}
