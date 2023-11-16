@@ -145,6 +145,15 @@ public class QOIStreamIngestorC extends VideoIngestor {
 		}
 
 		public void run() {
+			if (decNum != 0) {
+				synchronized (wait[decNum]) {
+					try {
+						wait[decNum].wait();
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+				}
+			}
 			long lastTime = System.nanoTime();
 			while (true) {
 				if (System.nanoTime() - lastTime > frameRateInterval) {
