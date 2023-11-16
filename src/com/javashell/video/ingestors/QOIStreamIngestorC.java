@@ -28,8 +28,7 @@ public class QOIStreamIngestorC extends VideoIngestor {
 	private String ip;
 	private int port;
 	private Socket sock;
-	private BufferedImage curFrame;
-	VolatileImage bufFrame;
+	private BufferedImage curFrame, bufFrame;
 	private Runnable unicastRunner, multicastRunner;
 	private Thread decoderThread0, decoderThread1;
 	private static boolean isOpen;
@@ -70,7 +69,7 @@ public class QOIStreamIngestorC extends VideoIngestor {
 
 	@Override
 	public BufferedImage processFrame(BufferedImage frame) {
-		curFrame.getGraphics().drawImage(bufFrame, 0, 0, bufFrame.getWidth(), bufFrame.getHeight(), null);
+		curFrame = bufFrame;
 		return curFrame;
 	}
 
@@ -79,8 +78,7 @@ public class QOIStreamIngestorC extends VideoIngestor {
 		try {
 			GraphicsConfiguration gc = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice()
 					.getDefaultConfiguration();
-			bufFrame = gc.createCompatibleVolatileImage(getResolution().width, getResolution().height);
-			curFrame = gc.createCompatibleImage(getResolution().width, getResolution().height);
+			bufFrame = gc.createCompatibleImage(getResolution().width, getResolution().height);
 			sock.connect(new InetSocketAddress(ip, port));
 			Thread captureThread;
 			isOpen = true;
@@ -137,9 +135,7 @@ public class QOIStreamIngestorC extends VideoIngestor {
 					}
 					lastTime = System.nanoTime();
 					byte[] decodedImage = decode(bufBytes0, bufBytes0.length);
-					bufFrame.getGraphics().drawImage(
-							toBufferedImageAbgr(getResolution().width, getResolution().height, decodedImage), 0, 0,
-							getResolution().width, getResolution().height, null);
+					bufFrame = toBufferedImageAbgr(getResolution().width, getResolution().height, decodedImage);
 					decodedImage = null;
 					try {
 						Thread.sleep(localizedFrameRateMS, localizedFrameRateNS);
@@ -188,9 +184,7 @@ public class QOIStreamIngestorC extends VideoIngestor {
 					}
 					lastTime = System.nanoTime();
 					byte[] decodedImage = decode(bufBytes1, bufBytes1.length);
-					bufFrame.getGraphics().drawImage(
-							toBufferedImageAbgr(getResolution().width, getResolution().height, decodedImage), 0, 0,
-							getResolution().width, getResolution().height, null);
+					bufFrame = toBufferedImageAbgr(getResolution().width, getResolution().height, decodedImage);
 					decodedImage = null;
 					try {
 						Thread.sleep(localizedFrameRateMS, localizedFrameRateNS);
