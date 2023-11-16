@@ -35,6 +35,7 @@ public class QOIStreamIngestorC extends VideoIngestor {
 	private static byte[] bufBytes0, bufBytes1;
 	private static int lastBufByte = 1;
 	private boolean isMulticast = false;
+	private static final String wait0 = "0", wait1 = "1";
 
 	static {
 		try {
@@ -120,6 +121,7 @@ public class QOIStreamIngestorC extends VideoIngestor {
 		private long localizedFrameRateInterval = frameRateInterval * 2;
 		private long localizedFrameRateMS = 0;
 		private int localizedFrameRateNS = 0;
+		private int width = getResolution().width, height = getResolution().height;
 
 		public void run() {
 			if (localizedFrameRateInterval > 999999) {
@@ -138,12 +140,20 @@ public class QOIStreamIngestorC extends VideoIngestor {
 				}
 				lastTime = System.nanoTime();
 				byte[] decodedImage = decode(bufBytes0, bufBytes0.length);
-				bufFrame = toBufferedImageAbgr(getResolution().width, getResolution().height, decodedImage);
+				final BufferedImage tmpFrame = toBufferedImageAbgr(width, height, decodedImage);
+				synchronized (bufFrame) {
+					bufFrame = tmpFrame;
+				}
 				decodedImage = null;
-				try {
-					Thread.sleep(localizedFrameRateMS, localizedFrameRateNS);
-				} catch (Exception e) {
-					e.printStackTrace();
+				synchronized (wait1) {
+					wait1.notify();
+				}
+				synchronized (wait0) {
+					try {
+						wait0.wait();
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
 				}
 				lastTime = System.nanoTime();
 			}
@@ -154,6 +164,7 @@ public class QOIStreamIngestorC extends VideoIngestor {
 		private long localizedFrameRateInterval = frameRateInterval * 2;
 		private long localizedFrameRateMS = 0;
 		private int localizedFrameRateNS = 0;
+		private int width = getResolution().width, height = getResolution().height;
 
 		public void run() {
 			if (localizedFrameRateInterval > 999999) {
@@ -182,7 +193,8 @@ public class QOIStreamIngestorC extends VideoIngestor {
 			while (true) {
 				long deltaTime = System.nanoTime() - lastTime;
 				if (deltaTime > localizedFrameRateInterval) {
-					System.err.println("Decoder 1 took too long between frames - " + deltaTime);
+					System.err.println("Decoder 1 took too long between frames - "
+							+ (deltaTime - localizedFrameRateInterval) + "ns");
 				}
 				if (bufBytes1 == null) {
 					System.out.println("1 null");
@@ -190,13 +202,22 @@ public class QOIStreamIngestorC extends VideoIngestor {
 				}
 				lastTime = System.nanoTime();
 				byte[] decodedImage = decode(bufBytes1, bufBytes1.length);
-				bufFrame = toBufferedImageAbgr(getResolution().width, getResolution().height, decodedImage);
-				decodedImage = null;
-				try {
-					Thread.sleep(localizedFrameRateMS, localizedFrameRateNS);
-				} catch (Exception e) {
-					e.printStackTrace();
+				final BufferedImage tmpFrame = toBufferedImageAbgr(width, height, decodedImage);
+				synchronized (bufFrame) {
+					bufFrame = tmpFrame;
 				}
+				decodedImage = null;
+				synchronized (wait0) {
+					wait0.notify();
+				}
+				synchronized (wait1) {
+					try {
+						wait1.wait();
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+				}
+				lastTime = System.nanoTime();
 			}
 		}
 	}
