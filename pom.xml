@@ -95,6 +95,11 @@
 			<version>1.10.0</version>
 			<classifier>natives-desktop</classifier>
 		</dependency>
+		<dependency>
+			<groupId>com.badlogicgames.gdx</groupId>
+			<artifactId>gdx</artifactId>
+			<version>1.10.0</version>
+		</dependency>
 	</dependencies>
 	<repositories>
 		<repository>

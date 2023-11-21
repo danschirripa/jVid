@@ -27,7 +27,7 @@ public class FFMPEG_to_QOIStream_Egressor_CL {
 		egressNode.setEgressDestinationNode(previewNode);
 
 		FlowController.registerFlowNode(ingressNode);
-
+		
 		ingest.open();
 		egress.open();
 		preview.open();
