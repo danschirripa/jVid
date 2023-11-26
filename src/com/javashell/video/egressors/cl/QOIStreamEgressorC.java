@@ -11,6 +11,7 @@ import java.nio.ByteBuffer;
 import java.util.HashSet;
 
 import com.javashell.video.VideoEgress;
+import com.javashell.video.egressors.experimental.QOIStreamEgressorCL;
 
 public class QOIStreamEgressorC extends VideoEgress {
 	private ServerSocket server;
@@ -31,7 +32,7 @@ public class QOIStreamEgressorC extends VideoEgress {
 			if (arch.equals("aarch64")) {
 				prefix = "aarch64";
 			}
-			InputStream libQOIEncoderStream = QOIStreamEgressor.class
+			InputStream libQOIEncoderStream = QOIStreamEgressorCL.class
 					.getResourceAsStream("/" + prefix + "/libQOIEncoder.so");
 			File libQOIEncoderFile = File.createTempFile("libQOIEncoder", ".so");
 			FileOutputStream libQOIEncoderOutputStream = new FileOutputStream(libQOIEncoderFile);

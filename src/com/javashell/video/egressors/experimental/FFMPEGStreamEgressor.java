@@ -1,4 +1,4 @@
-package com.javashell.video.egressors;
+package com.javashell.video.egressors.experimental;
 
 import java.awt.Dimension;
 import java.awt.image.BufferedImage;
@@ -21,8 +21,6 @@ public class FFMPEGStreamEgressor extends VideoEgress {
 	private static Java2DFrameConverter conv;
 	private static ServerSocket ss;
 	private static HashSet<Socket> socks;
-	private static SplitOutputStream bOut;
-	private Thread serverThread;
 	private boolean hasStarted = false;
 
 	public FFMPEGStreamEgressor(Dimension resolution) {
@@ -43,20 +41,18 @@ public class FFMPEGStreamEgressor extends VideoEgress {
 
 	@Override
 	public boolean open() {
-		serverThread = new Thread(new ServerRunnable());
-		bOut = new SplitOutputStream();
 		socks = new HashSet<Socket>();
 		conv = new Java2DFrameConverter();
 		FFmpegLogCallback.set();
 
-		recorder = new FFmpegFrameRecorder(bOut, getResolution().width, getResolution().height, 0);
-		recorder.setVideoCodec(avcodec.AV_CODEC_ID_H264);
-		recorder.setFormat("flv");
-		recorder.setFrameRate(60);
-		recorder.setGopSize(60);
+		recorder = new FFmpegFrameRecorder("udp://10.42.0.1:7896", getResolution().width, getResolution().height, 0);
+		recorder.setVideoCodec(avcodec.AV_CODEC_ID_H265);
+		recorder.setFormat("mpegts");
+		recorder.setFrameRate(30);
+		recorder.setGopSize(30);
+		recorder.setOption("localaddr", "10.42.0.1");
 		try {
 			recorder.start();
-			serverThread.start();
 			hasStarted = true;
 			return true;
 		} catch (Exception e) {
@@ -77,49 +73,6 @@ public class FFMPEGStreamEgressor extends VideoEgress {
 			e.printStackTrace();
 		}
 		return false;
-	}
-
-	private class SplitOutputStream extends OutputStream {
-
-		@Override
-		public void write(int arg0) throws IOException {
-			for (Socket s : socks) {
-				s.getOutputStream().write(arg0);
-			}
-		}
-
-		@Override
-		public void write(byte[] bytes) {
-			for (Socket s : socks) {
-				try {
-					s.getOutputStream().write(bytes);
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			}
-		}
-
-	}
-
-	private class ServerRunnable implements Runnable {
-
-		@Override
-		public void run() {
-			try {
-				ss = new ServerSocket(7896);
-				while (ss.isClosed() == false) {
-					try {
-						Socket s = ss.accept();
-						socks.add(s);
-					} catch (Exception e) {
-						e.printStackTrace();
-					}
-				}
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-		}
-
 	}
 
 }

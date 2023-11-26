@@ -9,7 +9,7 @@ import com.javashell.flow.FlowNode;
 import com.javashell.flow.VideoFlowNode;
 import com.javashell.video.VideoProcessor;
 import com.javashell.video.egressors.LocalWindowEgressor;
-import com.javashell.video.egressors.cl.QOIStreamEgressor;
+import com.javashell.video.egressors.experimental.QOIStreamEgressorCL;
 import com.javashell.video.ingestors.FFMPEGIngestor;
 
 public class FFMPEG_to_QOIStream_Egressor_CL {
@@ -17,7 +17,7 @@ public class FFMPEG_to_QOIStream_Egressor_CL {
 		URL streamURL = new URL(args[0]);
 		Dimension resolution = new Dimension(640, 360);
 		FFMPEGIngestor ingest = new FFMPEGIngestor(resolution, streamURL);
-		QOIStreamEgressor egress = new QOIStreamEgressor(resolution);
+		QOIStreamEgressorCL egress = new QOIStreamEgressorCL(resolution);
 		LocalWindowEgressor preview = new LocalWindowEgressor(resolution);
 
 		FlowNode<VideoProcessor> ingressNode = new VideoFlowNode(ingest, null, null);

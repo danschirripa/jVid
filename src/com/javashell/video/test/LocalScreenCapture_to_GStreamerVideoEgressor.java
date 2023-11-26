@@ -9,15 +9,15 @@ import com.javashell.flow.FlowController;
 import com.javashell.flow.FlowNode;
 import com.javashell.flow.VideoFlowNode;
 import com.javashell.video.VideoProcessor;
-import com.javashell.video.egressors.experimental.FFMPEGStreamEgressor;
+import com.javashell.video.egressors.experimental.GStreamerVideoEgressor;
 import com.javashell.video.ingestors.LocalScreenIngestor;
 
-public class LocalScreenCapture_to_FFMPEGStreamEgressor {
+public class LocalScreenCapture_to_GStreamerVideoEgressor {
 	public static void main(String[] args)
 			throws IOException, URISyntaxException, InterruptedException, NoSuchAlgorithmException {
 
 		LocalScreenIngestor ingress = new LocalScreenIngestor(new Dimension(1920, 1080));
-		FFMPEGStreamEgressor egress = new FFMPEGStreamEgressor(new Dimension(1920, 1080));
+		GStreamerVideoEgressor egress = new GStreamerVideoEgressor(new Dimension(1920, 1080));
 		// LocalWindowEgressor preview = new LocalWindowEgressor(new Dimension(1920,
 		// 1080));
 

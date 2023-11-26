@@ -1,4 +1,4 @@
-package com.javashell.video.egressors.cl;
+package com.javashell.video.egressors.experimental;
 
 import java.awt.Dimension;
 import java.awt.image.BufferedImage;
@@ -20,7 +20,7 @@ import com.jogamp.opencl.CLKernel;
 import com.jogamp.opencl.CLMemory;
 import com.jogamp.opencl.CLProgram;
 
-public class QOIStreamEgressor extends VideoEgress {
+public class QOIStreamEgressorCL extends VideoEgress {
 	private ServerSocket server;
 	private static HashSet<Socket> clients;
 	private static byte[] encodedBuffer0, encodedBuffer1;
@@ -30,9 +30,9 @@ public class QOIStreamEgressor extends VideoEgress {
 	private Thread serverThread, egressThread;
 	private static String clKernel = "";
 
-	public QOIStreamEgressor(Dimension resolution) {
+	public QOIStreamEgressorCL(Dimension resolution) {
 		super(resolution);
-		Scanner sc = new Scanner(QOIStreamEgressor.class.getResourceAsStream("/cl_QOIEncoder.cl"));
+		Scanner sc = new Scanner(QOIStreamEgressorCL.class.getResourceAsStream("/cl_QOIEncoder.cl"));
 		while (sc.hasNextLine()) {
 			clKernel += sc.nextLine() + "\n";
 		}
