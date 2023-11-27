@@ -20,6 +20,9 @@ import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.ByteBuffer;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import com.javashell.video.VideoIngestor;
 
@@ -33,9 +36,9 @@ public class QOIStreamIngestorC extends VideoIngestor {
 	private Thread[] decoderThreads;
 	private static boolean isOpen;
 	private static long frameRateInterval = (long) 16.3 * 1000000;
-	private static byte[] bufBytes0, bufBytes1;
+	private static byte[][] bufBytes0, bufBytes1;
 	private static byte[][] bufBytes;
-	private static int lastBufByte = 1;
+	private static int lastBufByte = 1, subSegments = 12;
 	private boolean isMulticast = false;
 	private static final String wait0 = "0", wait1 = "1";
 	private static String[] wait;
@@ -159,31 +162,57 @@ public class QOIStreamIngestorC extends VideoIngestor {
 			}
 			long lastTime = System.nanoTime();
 			while (true) {
-				if (System.nanoTime() - lastTime > frameRateInterval) {
-					System.err.println("Decoder " + decNum + " took too long between frames");
-				}
-				if (bufBytes[decNum] == null) {
-					System.out.println(decNum + " null");
-					continue;
-				}
-				lastTime = System.nanoTime();
-				byte[] decodedImage = decode(bufBytes[decNum], bufBytes[decNum].length);
-				final BufferedImage tmpFrame = toBufferedImageAbgr(width, height, decodedImage);
-				synchronized (bufFrame) {
-					bufFrame = tmpFrame;
-				}
-				decodedImage = null;
-				synchronized (wait[nextNum]) {
-					wait[nextNum].notify();
-				}
-				synchronized (wait[decNum]) {
-					try {
-						wait[decNum].wait();
-					} catch (Exception e) {
-						e.printStackTrace();
+				try {
+					if (System.nanoTime() - lastTime > frameRateInterval) {
+						System.err.println("Decoder " + decNum + " took too long between frames");
 					}
+					if (bufBytes[decNum] == null) {
+						System.out.println(decNum + " null");
+						continue;
+					}
+					lastTime = System.nanoTime();
+
+					byte[][] decodedRGB = new byte[subSegments][];
+					ExecutorService es = Executors.newCachedThreadPool();
+
+					for (int i = 0; i < subSegments; i++) {
+						final int index = i;
+						es.execute(new Runnable() {
+							public void run() {
+								decodedRGB[index] = decode(bufBytes[decNum], bufBytes[decNum].length);
+							}
+						});
+					}
+					es.shutdown();
+					es.awaitTermination(1, TimeUnit.SECONDS);
+
+					int totalSize = 0;
+					for (int i = 0; i < subSegments; i++) {
+						totalSize += decodedRGB[i].length;
+					}
+					final byte[] decodedImage = new byte[totalSize];
+					ByteBuffer buf = ByteBuffer.wrap(decodedImage);
+					for (int i = 0; i < subSegments; i++)
+						buf.put(decodedRGB[i]);
+
+					final BufferedImage tmpFrame = toBufferedImageAbgr(width, height, decodedImage);
+					synchronized (bufFrame) {
+						bufFrame = tmpFrame;
+					}
+					synchronized (wait[nextNum]) {
+						wait[nextNum].notify();
+					}
+					synchronized (wait[decNum]) {
+						try {
+							wait[decNum].wait();
+						} catch (Exception e) {
+							e.printStackTrace();
+						}
+					}
+					lastTime = System.nanoTime();
+				} catch (Exception e) {
+					e.printStackTrace();
 				}
-				lastTime = System.nanoTime();
 			}
 		}
 	}

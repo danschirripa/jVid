@@ -9,6 +9,9 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.util.HashSet;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import com.javashell.video.VideoEgress;
 import com.javashell.video.egressors.experimental.QOIStreamEgressorCL;
@@ -16,9 +19,9 @@ import com.javashell.video.egressors.experimental.QOIStreamEgressorCL;
 public class QOIStreamEgressorC extends VideoEgress {
 	private ServerSocket server;
 	private static HashSet<Socket> clients;
-	private static byte[] encodedBuffer0;
+	private static byte[][] encodedBuffer0;
 	private static BufferedImage bufFrame0, bufFrame1;
-	private static int lastBuf = 1;
+	private static int lastBuf = 1, subSegments = 12;
 	private static long lastTime;
 	private static boolean isRunning;
 	private static final long frameRateInterval = (long) 16.3 * 1000000;
@@ -56,13 +59,7 @@ public class QOIStreamEgressorC extends VideoEgress {
 		if (frame == null)
 			return frame;
 
-		if (lastBuf == 0) {
-			lastBuf = 1;
-			bufFrame1 = frame;
-		} else {
-			lastBuf = 0;
-			bufFrame0 = frame;
-		}
+		bufFrame1 = frame;
 
 		return frame;
 	}
@@ -93,7 +90,7 @@ public class QOIStreamEgressorC extends VideoEgress {
 			encoderThread1.setName("QOI_Enc1");
 			egressThread = new Thread(new EgressRunnable());
 			egressThread.setName("QOI_Egress");
-			encoderThread0.start();
+			// encoderThread0.start();
 			encoderThread1.start();
 			serverThread.start();
 			egressThread.start();
@@ -164,69 +161,71 @@ public class QOIStreamEgressorC extends VideoEgress {
 				localizedFrameRateNS = (int) localizedFrameRateInterval;
 			long lastTime = System.nanoTime();
 			while (true) {
-				if (System.nanoTime() - lastTime >= localizedFrameRateInterval) {
-					lastTime = System.nanoTime();
-					if (bufFrame0 == null) {
-						System.out.println("0 null");
-						continue;
-					}
-					lastTime = System.nanoTime();
-					final byte[] frameBytes = convertBufferedImageToByteArray(bufFrame0);
-					encodedBuffer0 = encode(frameBytes, getResolution().width, getResolution().height, 4, 0);
-					try {
-						Thread.sleep(localizedFrameRateMS, localizedFrameRateNS);
-					} catch (Exception e) {
-						e.printStackTrace();
-					}
+				long curTime = System.nanoTime();
+				if (curTime - lastTime >= localizedFrameRateInterval) {
+					System.err.println("Encoder0 took too long, " + (curTime - lastTime));
 				}
+				if (bufFrame0 == null) {
+					System.out.println("0 null");
+					continue;
+				}
+				lastTime = System.nanoTime();
+				final byte[] frameBytes = convertBufferedImageToByteArray(bufFrame0);
+				encodedBuffer0[0] = encode(frameBytes, getResolution().width, getResolution().height, 4, 0);
+				long encodeTime = System.nanoTime() - lastTime;
+				System.out.println("0 took " + encodeTime);
+				try {
+					Thread.sleep(localizedFrameRateMS, localizedFrameRateNS);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+
 			}
 
 		}
 	}
 
 	private class EncoderThread1 implements Runnable {
-		private long localizedFrameRateInterval = frameRateInterval * 2;
-		private long localizedFrameRateMS = 0;
-		private int localizedFrameRateNS = 0;
 
 		public void run() {
-			if (localizedFrameRateInterval > 999999) {
-				localizedFrameRateMS = localizedFrameRateInterval / 1000000;
-				localizedFrameRateNS = (int) (localizedFrameRateInterval % 1000000);
-			} else
-				localizedFrameRateNS = (int) localizedFrameRateInterval;
-
-			long firstRunDelayMS = 0;
-			int firstRunDelayNS = 0;
-			long firstRunDelayTotal = localizedFrameRateInterval / 2;
-
-			if (firstRunDelayTotal > 999999) {
-				firstRunDelayMS = firstRunDelayTotal / 1000000;
-				firstRunDelayNS = (int) (firstRunDelayTotal % 1000000);
-			} else
-				firstRunDelayNS = (int) localizedFrameRateInterval;
-
-			try {
-				Thread.sleep(firstRunDelayMS, firstRunDelayNS);
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
 			long lastTime = System.nanoTime();
 			while (true) {
-				if (System.nanoTime() - lastTime >= localizedFrameRateInterval) {
-					lastTime = System.nanoTime();
+				try {
+					long curTime = System.nanoTime();
+					if (curTime - lastTime >= frameRateInterval) {
+						System.err.println("Encoder1 took too long, " + (curTime - lastTime));
+					}
 					if (bufFrame1 == null) {
 						System.out.println("1 null");
 						continue;
 					}
 					lastTime = System.nanoTime();
-					final byte[] frameBytes = convertBufferedImageToByteArray(bufFrame1);
-					encodedBuffer0 = encode(frameBytes, getResolution().width, getResolution().height, 4, 0);
-					try {
-						Thread.sleep(localizedFrameRateMS, localizedFrameRateNS);
-					} catch (Exception e) {
-						e.printStackTrace();
+
+					final int width = getResolution().width;
+					final int yDelta = getResolution().height / subSegments;
+					byte[][] encodedSubImages = new byte[subSegments][];
+
+					ExecutorService es = Executors.newCachedThreadPool();
+
+					for (int i = 0; i < subSegments; i++) {
+						final BufferedImage subImage = bufFrame1.getSubimage(0, yDelta * i, width, yDelta);
+						final int index = i;
+						es.execute(new Runnable() {
+							public void run() {
+								final long startTime = System.nanoTime();
+								final byte[] frameBytes = convertBufferedImageToByteArray(subImage);
+								encodedSubImages[index] = encode(frameBytes, width, yDelta, 4, 0);
+								System.out.println("Ended after " + (System.nanoTime() - startTime) + "ns");
+							}
+						});
 					}
+					es.shutdown();
+					es.awaitTermination(1, TimeUnit.SECONDS);
+					encodedBuffer0 = encodedSubImages;
+					long encodeTime = System.nanoTime() - lastTime;
+					System.out.println("1 took " + encodeTime);
+				} catch (Exception e) {
+					e.printStackTrace();
 				}
 			}
 		}
@@ -254,12 +253,14 @@ public class QOIStreamEgressorC extends VideoEgress {
 							System.out.println("egress null");
 							continue;
 						}
-						final byte[] qoiBytes = encodedBuffer0;
-						final byte[] size = intToBytes(qoiBytes.length);
+						final byte[][] qoiBytes = encodedBuffer0;
 						for (Socket client : clients) {
 							try {
-								client.getOutputStream().write(size);
-								client.getOutputStream().write(qoiBytes);
+								for (int i = 0; i < subSegments; i++) {
+									final byte[] size = intToBytes(qoiBytes[i].length);
+									client.getOutputStream().write(size);
+									client.getOutputStream().write(qoiBytes[i]);
+								}
 							} catch (Exception e) {
 								clients.remove(client);
 							}
