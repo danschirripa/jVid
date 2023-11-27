@@ -166,7 +166,8 @@ public class QOIStreamIngestorC extends VideoIngestor {
 					if (System.nanoTime() - lastTime > frameRateInterval) {
 						System.err.println("Decoder " + decNum + " took too long between frames");
 					}
-					if (bufBytes[decNum] == null) {
+					if (bufBytes[decNum] == null || bufBytes[decNum].length < subSegments
+							|| bufBytes[decNum][0] == null) {
 						System.out.println(decNum + " null");
 						continue;
 					}
@@ -236,7 +237,6 @@ public class QOIStreamIngestorC extends VideoIngestor {
 			try {
 				BufferedInputStream in = new BufferedInputStream(sock.getInputStream());
 				OutputStream out = sock.getOutputStream();
-				long lastTime = System.currentTimeMillis();
 				while (!sock.isClosed()) {
 					try {
 						if (lastBufByte == decoderThreads.length) {
@@ -256,7 +256,6 @@ public class QOIStreamIngestorC extends VideoIngestor {
 						in.readAllBytes();
 						out.write((byte) 0);
 					}
-					lastTime = System.currentTimeMillis();
 				}
 			} catch (Exception e) {
 				e.printStackTrace();
