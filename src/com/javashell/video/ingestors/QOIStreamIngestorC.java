@@ -32,16 +32,13 @@ public class QOIStreamIngestorC extends VideoIngestor {
 	private Socket sock;
 	private BufferedImage curFrame, bufFrame;
 	private Runnable unicastRunner, multicastRunner;
-	private Thread decoderThread0, decoderThread1;
-	private Thread[] decoderThreads;
+	private static Thread[] decoderThreads;
 	private static boolean isOpen;
 	private static long frameRateInterval = (long) 16.3 * 1000000;
 	private static byte[][] bufBytes0, bufBytes1;
 	private static byte[][][] bufBytes;
 	private static int lastBufByte = 1, subSegments = 12;
 	private boolean isMulticast = false;
-	private static final String wait0 = "0", wait1 = "1";
-	private static String[] wait;
 
 	static {
 		try {
@@ -75,14 +72,22 @@ public class QOIStreamIngestorC extends VideoIngestor {
 		this.ip = ip;
 		this.port = port;
 		this.sock = new Socket();
-		this.decoderThreads = new Thread[numThreads];
+		decoderThreads = new Thread[numThreads];
 		bufBytes = new byte[numThreads][subSegments][];
-		wait = new String[numThreads];
+		final DecoderRunnable[] decRunners = new DecoderRunnable[numThreads];
 
 		for (int i = 0; i < numThreads; i++) {
-			wait[i] = "" + i;
+			decRunners[i] = new DecoderRunnable(i);
+		}
 
-			Thread decThread = new Thread(new DecoderRunnable(i));
+		for (int i = 0; i < numThreads; i++) {
+			final DecoderRunnable decRun = decRunners[i];
+			final DecoderRunnable nextDec = (i + 1 == numThreads) ? decRunners[0] : decRunners[i + 1];
+			decRun.setThisThread(decRun);
+			decRun.setNextThread(nextDec);
+		}
+		for (int i = 0; i < numThreads; i++) {
+			Thread decThread = new Thread(decRunners[i]);
 			decThread.setName("Dec" + i);
 			decoderThreads[i] = decThread;
 		}
@@ -138,37 +143,45 @@ public class QOIStreamIngestorC extends VideoIngestor {
 
 	private class DecoderRunnable implements Runnable {
 		private int width = getResolution().width, height = getResolution().height;
-		private int decNum, nextNum;
+		private int decNum;
+		private Object thisThread, nextThread;
 
 		public DecoderRunnable(int num) {
 			decNum = num;
-			if (decNum == decoderThreads.length) {
-				nextNum = 0;
-			} else {
-				nextNum = decNum + 1;
-			}
+		}
 
+		public void setNextThread(Object nextThread) {
+			this.nextThread = nextThread;
+		}
+
+		public void setThisThread(Object thisThread) {
+			this.thisThread = thisThread;
 		}
 
 		public void run() {
-			if (decNum != 0) {
-				synchronized (wait[decNum]) {
+			if (decNum != 0)
+				synchronized (thisThread) {
 					try {
-						wait[decNum].wait();
+						thisThread.wait();
 					} catch (Exception e) {
 						e.printStackTrace();
 					}
 				}
-			}
+
 			long lastTime = System.nanoTime();
 			while (true) {
 				try {
-					if (System.nanoTime() - lastTime > frameRateInterval) {
-						System.err.println("Decoder " + decNum + " took too long between frames");
-					}
-					if (bufBytes[decNum] == null || bufBytes[decNum].length < subSegments
-							|| bufBytes[decNum][0] == null) {
+
+					if (bufBytes[decNum] == null) {
 						System.out.println(decNum + " null");
+						continue;
+					}
+					if (bufBytes[decNum].length < subSegments) {
+						System.out.println("Bad subsegs");
+						continue;
+					}
+					if (bufBytes[decNum][0] == null) {
+						System.out.println("No data");
 						continue;
 					}
 					lastTime = System.nanoTime();
@@ -200,17 +213,17 @@ public class QOIStreamIngestorC extends VideoIngestor {
 					synchronized (bufFrame) {
 						bufFrame = tmpFrame;
 					}
-					synchronized (wait[nextNum]) {
-						wait[nextNum].notify();
+					synchronized (nextThread) {
+						nextThread.notify();
 					}
-					synchronized (wait[decNum]) {
+					synchronized (thisThread) {
 						try {
-							wait[decNum].wait();
+							thisThread.wait();
 						} catch (Exception e) {
 							e.printStackTrace();
 						}
+						lastTime = System.nanoTime();
 					}
-					lastTime = System.nanoTime();
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -241,8 +254,6 @@ public class QOIStreamIngestorC extends VideoIngestor {
 					try {
 						if (lastBufByte == decoderThreads.length) {
 							lastBufByte = 0;
-						} else {
-							lastBufByte++;
 						}
 						for (int i = 0; i < subSegments; i++) {
 							final byte[] sizeBytes = new byte[4];
@@ -250,14 +261,19 @@ public class QOIStreamIngestorC extends VideoIngestor {
 							final int size = bytesToInt(sizeBytes);
 							final byte[] imageBytes = in.readNBytes(size);
 							bufBytes[lastBufByte][i] = imageBytes;
+							System.out.println("Index: " + i + " Size: " + size + " BufIndex " + lastBufByte);
 						}
+						lastBufByte++;
+
 					} catch (Exception e) {
 						e.printStackTrace();
 						in.readAllBytes();
 						out.write((byte) 0);
 					}
 				}
-			} catch (Exception e) {
+			} catch (
+
+			Exception e) {
 				e.printStackTrace();
 			}
 		}
@@ -271,5 +287,4 @@ public class QOIStreamIngestorC extends VideoIngestor {
 		}
 
 	}
-
 }

@@ -14,9 +14,8 @@ import com.javashell.video.ingestors.FFMPEGIngestor;
 public class FFMPEG_to_local_Egressor {
 	public static void main(String[] args) throws IOException {
 		String ip = args[0];
-		Socket s = new Socket(ip, 7896);
 		Dimension resolution = new Dimension(1920, 1080);
-		FFMPEGIngestor ingest = new FFMPEGIngestor(resolution, s.getInputStream());
+		FFMPEGIngestor ingest = new FFMPEGIngestor(resolution, ip, "rtp");
 		LocalWindowEgressor egress = new LocalWindowEgressor(resolution);
 
 		FlowNode<VideoProcessor> ingressNode = new VideoFlowNode(ingest, null, null);
