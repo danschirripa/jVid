@@ -163,7 +163,7 @@ public class QOIStreamEgressorC extends VideoEgress {
 			while (true) {
 				long curTime = System.nanoTime();
 				if (curTime - lastTime >= localizedFrameRateInterval) {
-					System.err.println("Encoder0 took too long, " + (curTime - lastTime));
+					// System.err.println("Encoder0 took too long, " + (curTime - lastTime));
 				}
 				if (bufFrame0 == null) {
 					System.out.println("0 null");
@@ -215,7 +215,6 @@ public class QOIStreamEgressorC extends VideoEgress {
 								final long startTime = System.nanoTime();
 								final byte[] frameBytes = convertBufferedImageToByteArray(subImage);
 								encodedSubImages[index] = encode(frameBytes, width, yDelta, 4, 0);
-								System.out.println("Ended after " + (System.nanoTime() - startTime) + "ns");
 							}
 						});
 					}
@@ -223,7 +222,6 @@ public class QOIStreamEgressorC extends VideoEgress {
 					es.awaitTermination(1, TimeUnit.SECONDS);
 					encodedBuffer0 = encodedSubImages;
 					long encodeTime = System.nanoTime() - lastTime;
-					System.out.println("1 took " + encodeTime);
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -258,10 +256,16 @@ public class QOIStreamEgressorC extends VideoEgress {
 							try {
 								for (int i = 0; i < subSegments; i++) {
 									final byte[] size = intToBytes(qoiBytes[i].length);
+									if (qoiBytes[i].length <= 0) {
+										System.err.println("Size of 0 detected");
+										i--;
+										continue;
+									}
 									client.getOutputStream().write(size);
 									client.getOutputStream().write(qoiBytes[i]);
 								}
 							} catch (Exception e) {
+								e.printStackTrace();
 								clients.remove(client);
 							}
 
@@ -269,7 +273,6 @@ public class QOIStreamEgressorC extends VideoEgress {
 						Thread.sleep(frameRateMS, frameRateNS);
 					} catch (Exception e) {
 						e.printStackTrace();
-						;
 					}
 				}
 			}
