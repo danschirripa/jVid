@@ -233,6 +233,7 @@ public class QOIStreamIngestorC extends VideoIngestor {
 
 	BufferedImage toBufferedImageAbgr(int width, int height, byte[] abgrData) {
 		final DataBuffer dataBuffer = new DataBufferByte(abgrData, width * height * 4, 0);
+		System.out.println(abgrData.length);
 		final ColorModel colorModel = new ComponentColorModel(ColorSpace.getInstance(ColorSpace.CS_sRGB),
 				new int[] { 8, 8, 8, 8 }, true, false, Transparency.OPAQUE, DataBuffer.TYPE_BYTE);
 		final WritableRaster raster = Raster.createInterleavedRaster(dataBuffer, width, height, width * 4, 4,
@@ -256,12 +257,10 @@ public class QOIStreamIngestorC extends VideoIngestor {
 							lastBufByte = 0;
 						}
 						for (int i = 0; i < subSegments; i++) {
-							final byte[] sizeBytes = new byte[4];
-							in.read(sizeBytes);
+							final byte[] sizeBytes = in.readNBytes(4);
 							final int size = bytesToInt(sizeBytes);
 							final byte[] imageBytes = in.readNBytes(size);
 							bufBytes[lastBufByte][i] = imageBytes;
-							System.out.println("Index: " + i + " Size: " + size + " BufIndex " + lastBufByte);
 						}
 						lastBufByte++;
 
