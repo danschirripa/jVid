@@ -37,7 +37,7 @@ public class QOIStreamIngestorC extends VideoIngestor {
 	private static boolean isOpen;
 	private static long frameRateInterval = (long) 16.3 * 1000000;
 	private static byte[][] bufBytes0, bufBytes1;
-	private static byte[][] bufBytes;
+	private static byte[][][] bufBytes;
 	private static int lastBufByte = 1, subSegments = 12;
 	private boolean isMulticast = false;
 	private static final String wait0 = "0", wait1 = "1";
@@ -76,7 +76,7 @@ public class QOIStreamIngestorC extends VideoIngestor {
 		this.port = port;
 		this.sock = new Socket();
 		this.decoderThreads = new Thread[numThreads];
-		bufBytes = new byte[numThreads][];
+		bufBytes = new byte[numThreads][subSegments][];
 		wait = new String[numThreads];
 
 		for (int i = 0; i < numThreads; i++) {
@@ -179,7 +179,7 @@ public class QOIStreamIngestorC extends VideoIngestor {
 						final int index = i;
 						es.execute(new Runnable() {
 							public void run() {
-								decodedRGB[index] = decode(bufBytes[decNum], bufBytes[decNum].length);
+								decodedRGB[index] = decode(bufBytes[decNum][index], bufBytes[decNum][index].length);
 							}
 						});
 					}
@@ -239,19 +239,18 @@ public class QOIStreamIngestorC extends VideoIngestor {
 				long lastTime = System.currentTimeMillis();
 				while (!sock.isClosed()) {
 					try {
-						final byte[] sizeBytes = new byte[4];
-						in.read(sizeBytes);
-						if (System.currentTimeMillis() - lastTime > frameRateInterval) {
-							System.err.println("Stream not being served at expected rate");
-						}
-						final int size = bytesToInt(sizeBytes);
-						final byte[] imageBytes = in.readNBytes(size);
 						if (lastBufByte == decoderThreads.length) {
 							lastBufByte = 0;
 						} else {
 							lastBufByte++;
 						}
-						bufBytes[lastBufByte] = imageBytes;
+						for (int i = 0; i < subSegments; i++) {
+							final byte[] sizeBytes = new byte[4];
+							in.read(sizeBytes);
+							final int size = bytesToInt(sizeBytes);
+							final byte[] imageBytes = in.readNBytes(size);
+							bufBytes[lastBufByte][i] = imageBytes;
+						}
 					} catch (Exception e) {
 						e.printStackTrace();
 						in.readAllBytes();
