@@ -25,7 +25,7 @@ public class QOIStreamEgressorC extends VideoEgress {
 	private static long lastTime;
 	private static boolean isRunning;
 	private static final long frameRateInterval = (long) 16.3 * 1000000;
-	private Thread serverThread, egressThread, encoderThread0, encoderThread1;
+	private Thread serverThread, egressThread, encoderThread1;
 
 	static {
 		try {
@@ -84,13 +84,10 @@ public class QOIStreamEgressorC extends VideoEgress {
 				}
 			});
 			serverThread.setName("QOI_Server");
-			encoderThread0 = new Thread(new EncoderThread0());
 			encoderThread1 = new Thread(new EncoderThread1());
-			encoderThread0.setName("QOI_Enc0");
 			encoderThread1.setName("QOI_Enc1");
 			egressThread = new Thread(new EgressRunnable());
 			egressThread.setName("QOI_Egress");
-			// encoderThread0.start();
 			encoderThread1.start();
 			serverThread.start();
 			egressThread.start();
@@ -146,43 +143,6 @@ public class QOIStreamEgressorC extends VideoEgress {
 
 	private byte[] intToBytes(int i) {
 		return ByteBuffer.allocate(4).putInt(i).array();
-	}
-
-	private class EncoderThread0 implements Runnable {
-		private long localizedFrameRateInterval = frameRateInterval * 2;
-		private long localizedFrameRateMS = 0;
-		private int localizedFrameRateNS = 0;
-
-		public void run() {
-			if (localizedFrameRateInterval > 999999) {
-				localizedFrameRateMS = localizedFrameRateInterval / 1000000;
-				localizedFrameRateNS = (int) (localizedFrameRateInterval % 1000000);
-			} else
-				localizedFrameRateNS = (int) localizedFrameRateInterval;
-			long lastTime = System.nanoTime();
-			while (true) {
-				long curTime = System.nanoTime();
-				if (curTime - lastTime >= localizedFrameRateInterval) {
-					// System.err.println("Encoder0 took too long, " + (curTime - lastTime));
-				}
-				if (bufFrame0 == null) {
-					System.out.println("0 null");
-					continue;
-				}
-				lastTime = System.nanoTime();
-				final byte[] frameBytes = convertBufferedImageToByteArray(bufFrame0);
-				encodedBuffer0[0] = encode(frameBytes, getResolution().width, getResolution().height, 4, 0);
-				long encodeTime = System.nanoTime() - lastTime;
-				System.out.println("0 took " + encodeTime);
-				try {
-					Thread.sleep(localizedFrameRateMS, localizedFrameRateNS);
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-
-			}
-
-		}
 	}
 
 	private class EncoderThread1 implements Runnable {
