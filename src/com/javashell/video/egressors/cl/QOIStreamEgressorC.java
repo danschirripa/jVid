@@ -14,7 +14,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import com.javashell.video.VideoEgress;
-import com.javashell.video.egressors.experimental.QOIStreamEgressorCL;
 
 public class QOIStreamEgressorC extends VideoEgress {
 	private ServerSocket server;
@@ -35,7 +34,7 @@ public class QOIStreamEgressorC extends VideoEgress {
 			if (arch.equals("aarch64")) {
 				prefix = "aarch64";
 			}
-			InputStream libQOIEncoderStream = QOIStreamEgressorCL.class
+			InputStream libQOIEncoderStream = QOIStreamEgressorC.class
 					.getResourceAsStream("/" + prefix + "/libQOIEncoder.so");
 			File libQOIEncoderFile = File.createTempFile("libQOIEncoder", ".so");
 			FileOutputStream libQOIEncoderOutputStream = new FileOutputStream(libQOIEncoderFile);
@@ -59,7 +58,12 @@ public class QOIStreamEgressorC extends VideoEgress {
 		if (frame == null)
 			return frame;
 
+		bufFrame0 = bufFrame1;
 		bufFrame1 = frame;
+
+		if (bufFrame0 == null) {
+			bufFrame0 = new BufferedImage(getResolution().width, getResolution().height, BufferedImage.TYPE_INT_ARGB);
+		}
 
 		return frame;
 	}
@@ -139,7 +143,7 @@ public class QOIStreamEgressorC extends VideoEgress {
 		return true;
 	}
 
-	private native byte[] encode(byte[] data, int width, int height, int channels, int colorspace);
+	private native byte[] encode(byte[] data, byte[] preData, int width, int height, int channels, int colorspace);
 
 	private byte[] intToBytes(int i) {
 		return ByteBuffer.allocate(4).putInt(i).array();
@@ -168,13 +172,15 @@ public class QOIStreamEgressorC extends VideoEgress {
 					ExecutorService es = Executors.newCachedThreadPool();
 
 					for (int i = 0; i < subSegments; i++) {
+						final BufferedImage preImage = bufFrame0.getSubimage(0, yDelta * i, width, yDelta);
 						final BufferedImage subImage = bufFrame1.getSubimage(0, yDelta * i, width, yDelta);
 						final int index = i;
 						es.execute(new Runnable() {
 							public void run() {
 								final long startTime = System.nanoTime();
 								final byte[] frameBytes = convertBufferedImageToByteArray(subImage);
-								encodedSubImages[index] = encode(frameBytes, width, yDelta, 4, 0);
+								final byte[] prevFrameB = convertBufferedImageToByteArray(preImage);
+								encodedSubImages[index] = encode(frameBytes, prevFrameB, width, yDelta, 4, 0);
 							}
 						});
 					}

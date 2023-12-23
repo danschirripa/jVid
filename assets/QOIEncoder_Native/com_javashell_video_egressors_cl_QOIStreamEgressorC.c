@@ -5,12 +5,33 @@
 #include <cstdlib>
 
 JNIEXPORT jbyteArray JNICALL Java_com_javashell_video_egressors_cl_QOIStreamEgressorC_encode
-  (JNIEnv* env, jobject object, jbyteArray input, jint width, jint height, jint channels, jint colorspace){
+  (JNIEnv* env, jobject object, jbyteArray input, jbyteArray prev, jint width, jint height, jint channels, jint colorspace){
     qoi_desc_t desc;
     qoi_enc_t enc;
     uint8_t* pixel_seek;
     uint8_t* data = (uint8_t*) env->GetByteArrayElements(input, NULL);
+    uint8_t* prevDat = (uint8_t*) env->GetByteArrayElements(prev, NULL);
     uint8_t* qoi_output;
+
+    for(int i = 0; i < (width * height); i = i+4){
+      uint8_t nRed = data[i];
+      uint8_t nBlue = data[i+1];
+      uint8_t nGreen = data[i+2];
+      uint8_t nAlpha = data[i+3];
+      
+      uint8_t pRed = prevDat[i];
+      uint8_t pBlue = prevDat[i+1];
+      uint8_t pGreen = prevDat[i+2];
+      uint8_t pAlpha = prevDat[i+3];
+
+      if(nRed == pRed && nBlue == pBlue && nGreen == pGreen && nAlpha == pAlpha){
+        data[i] = 0;
+        data[i+1] = 0;
+        data[i+2] = 0;
+        data[i+3] = 0;
+      }
+    }
+    free(prevDat);
 
     qoi_desc_init(&desc);
     qoi_set_dimensions(&desc, width, height);

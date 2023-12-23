@@ -7,13 +7,15 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+#undef com_javashell_video_egressors_cl_QOIStreamEgressorC_frameRateInterval
+#define com_javashell_video_egressors_cl_QOIStreamEgressorC_frameRateInterval 16000000LL
 /*
  * Class:     com_javashell_video_egressors_cl_QOIStreamEgressorC
  * Method:    encode
- * Signature: ([BIII)[B
+ * Signature: ([B[BIIII)[B
  */
 JNIEXPORT jbyteArray JNICALL Java_com_javashell_video_egressors_cl_QOIStreamEgressorC_encode
-  (JNIEnv *, jobject, jbyteArray, jint, jint, jint, jint);
+  (JNIEnv *, jobject, jbyteArray, jbyteArray, jint, jint, jint, jint);
 
 #ifdef __cplusplus
 }
