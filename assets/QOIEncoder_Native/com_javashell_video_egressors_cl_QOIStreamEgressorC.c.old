@@ -1,0 +1,203 @@
+
+#define  SIMPLIFIED_QOI_IMPLEMENTATION
+#include "sQOI.h"
+#include "com_javashell_video_egressors_cl_QOIStreamEgressorC.h"
+#include <jni.h>
+#include <cstdlib>
+#include <vector>
+
+void convertCompare3Channel(uint8_t* current, uint8_t* previous, uint8_t* output, size_t totalSize){
+  size_t prevIndex = 0;
+  size_t currIndex = 0;
+
+  uint8_t alpha = 255;
+  uint8_t red = 255;
+  uint8_t green = 255;
+  uint8_t blue = 255;
+
+  while(currIndex < totalSize){
+    alpha = 255;
+    red = current[prevIndex + 2];
+    green = current[prevIndex + 1];
+    blue = current[prevIndex];
+
+    if(red == previous[prevIndex + 2] && green == previous[prevIndex + 1] && blue == previous[prevIndex]){
+      red = 0;
+      green = 0;
+      blue = 0;
+      alpha = 0;
+    }
+    output[currIndex] = red;
+    output[currIndex + 1] = green;
+    output[currIndex + 2] = blue;
+    output[currIndex + 3] = alpha;
+    currIndex += 4;
+    prevIndex += 3;
+  }
+}
+
+void convert3Channel(uint8_t* input, uint8_t* output, size_t totalSize){
+  size_t prevIndex = 0;
+  size_t currIndex = 0;
+
+  while(currIndex < totalSize){
+    output[currIndex] = input[prevIndex + 2];
+    output[currIndex + 1] = input[prevIndex + 1];
+    output[currIndex + 2] = input[prevIndex];
+    output[currIndex + 3] = 255;
+    currIndex += 4;
+    prevIndex += 3;
+  }
+}
+
+void convertCompare4Channel(uint8_t* current, uint8_t* previous, uint8_t* output, size_t totalSize){
+  size_t currIndex = 0;
+
+  uint8_t alpha = 255;
+  uint8_t red = 255;
+  uint8_t green = 255;
+  uint8_t blue = 255;
+
+  while(currIndex < totalSize){
+    alpha = current[currIndex + 3];
+    red = current[currIndex + 2];
+    green = current[currIndex + 1];
+    blue = current[currIndex];
+
+    if(alpha == previous[currIndex + 3] && red == previous[currIndex + 2] && green == previous[currIndex + 1] && blue == previous[currIndex]){
+      red = 0;
+      green = 0;
+      blue = 0;
+      alpha = 0;
+    }
+    output[currIndex] = red;
+    output[currIndex + 1] = green;
+    output[currIndex + 2] = blue;
+    output[currIndex + 3] = alpha;
+    currIndex += 4;
+  }
+}
+
+void convert4Channel(uint8_t* input, uint8_t* output, size_t totalSize){
+  size_t currIndex = 0;
+
+  while(currIndex < totalSize){
+    output[currIndex] = input[currIndex + 2];
+    output[currIndex + 1] = input[currIndex + 1];
+    output[currIndex + 2] = input[currIndex];
+    output[currIndex + 3] = input[currIndex + 3];
+    currIndex += 4;
+  }
+}
+
+JNIEXPORT jbyteArray JNICALL Java_com_javashell_video_egressors_cl_QOIStreamEgressorC__1convertAndCompareB
+  (JNIEnv* env, jclass object, jbyteArray current, jbyteArray previous, jint width, jint height, jint channels){
+    uint8_t* currentData = (uint8_t*) env->GetByteArrayElements(current, NULL);
+    uint8_t* previousData = (uint8_t*) env->GetByteArrayElements(previous, NULL);
+
+    size_t totalSize = width * height * 4;
+    uint8_t* output = (uint8_t*)malloc(totalSize * sizeof(uint8_t));
+    if(channels == 3){
+      convertCompare3Channel(currentData, previousData, output, totalSize);
+    } else {
+      convertCompare4Channel(currentData, previousData, output, totalSize);
+    }
+    jbyteArray initalizedData = env->NewByteArray((jsize)totalSize);
+    env->SetByteArrayRegion(initalizedData, 0, (jsize)totalSize, (jbyte*)output);
+    free(currentData);
+    free(previousData);
+    free(output);
+    return initalizedData;
+  }
+
+  JNIEXPORT jbyteArray JNICALL Java_com_javashell_video_egressors_cl_QOIStreamEgressorC__1convertDontCompareB
+  (JNIEnv* env, jclass object, jbyteArray current, jint width, jint height, jint channels){
+    uint8_t* currentData = (uint8_t*) env->GetByteArrayElements(current, NULL);
+    size_t totalSize = width * height * 4;
+    uint8_t* output = (uint8_t*)malloc(totalSize * sizeof(uint8_t));
+    if(channels == 3){
+      convert3Channel(currentData, output, totalSize);
+    } else {
+      convert4Channel(currentData, output, totalSize);
+    }
+    jbyteArray initalizedData = env->NewByteArray((jsize)totalSize);
+    env->SetByteArrayRegion(initalizedData, 0, (jsize)totalSize, (jbyte*)output);
+    free(currentData);
+    free(output);
+    return initalizedData;
+  }
+
+  JNIEXPORT jbyteArray JNICALL Java_com_javashell_video_egressors_cl_QOIStreamEgressorC__1convertAndCompareI
+  (JNIEnv* env, jclass object, jintArray current, jintArray previous, jint width, jint height, jint channels){
+    uint8_t* currentData = (uint8_t*) env->GetIntArrayElements(current, NULL);
+    uint8_t* previousData = (uint8_t*) env->GetIntArrayElements(previous, NULL);
+
+    size_t totalSize = width * height * 4;
+    uint8_t* output = (uint8_t*)malloc(totalSize * sizeof(uint8_t));
+
+    if(channels == 3){
+      convertCompare3Channel(currentData, previousData, output, totalSize);
+    } else {
+      convertCompare4Channel(currentData, previousData, output, totalSize);
+    }
+    jbyteArray initalizedData = env->NewByteArray((jsize)totalSize);
+    env->SetByteArrayRegion(initalizedData, 0, (jsize)totalSize, (jbyte*)output);
+    free(currentData);
+    free(previousData);
+    free(output);
+    return initalizedData;
+  }
+
+  JNIEXPORT jbyteArray JNICALL Java_com_javashell_video_egressors_cl_QOIStreamEgressorC__1convertDontCompareI
+  (JNIEnv* env, jclass object, jintArray current, jint width, jint height, jint channels){
+    uint8_t* currentData = (uint8_t*) env->GetIntArrayElements(current, NULL);
+
+    size_t totalSize = width * height * 4;
+    uint8_t* output = (uint8_t*)malloc(totalSize * sizeof(uint8_t));
+
+    if(channels == 3){
+      convert3Channel(currentData, output, totalSize);
+    } else {
+      convert4Channel(currentData, output, totalSize);
+    }
+    jbyteArray initalizedData = env->NewByteArray((jsize)totalSize);
+    env->SetByteArrayRegion(initalizedData, 0, (jsize)totalSize, (jbyte*)output);
+    free(currentData);
+    free(output);
+    return initalizedData;
+  }
+
+
+JNIEXPORT jbyteArray JNICALL Java_com_javashell_video_egressors_cl_QOIStreamEgressorC_encode
+  (JNIEnv* env, jobject object, jbyteArray input, jint width, jint height, jint channels, jint colorspace, jboolean isKeyFrame){
+    qoi_desc_t desc;
+    qoi_enc_t enc;
+    uint8_t* pixel_seek;
+    uint8_t* data = (uint8_t*) env->GetByteArrayElements(input, NULL);
+    uint8_t* qoi_output;
+
+    qoi_desc_init(&desc);
+    qoi_set_dimensions(&desc, width, height);
+    qoi_set_channels(&desc, channels);
+    qoi_set_colorspace(&desc, colorspace);
+    qoi_output = (uint8_t*)malloc(((size_t)desc.width * (size_t)desc.height * ((size_t)desc.channels + 1)) + 14 + 8 + sizeof(size_t));
+
+
+    write_qoi_header(&desc, qoi_output);
+
+    pixel_seek = data;
+    qoi_enc_init(&desc, &enc, qoi_output);
+
+    while(!qoi_enc_done(&enc)){
+        qoi_encode_chunk(&desc, &enc, pixel_seek);
+        pixel_seek += desc.channels;
+    }
+
+    qoi_output = (uint8_t*)realloc(qoi_output, enc.offset - enc.data);
+
+    jbyteArray encodedData = env->NewByteArray((jsize)(enc.offset - enc.data));
+    env->SetByteArrayRegion(encodedData, 0, (jsize)(enc.offset - enc.data), (jbyte*)qoi_output);
+    free(data);
+    free(qoi_output);
+    return encodedData;
+  }

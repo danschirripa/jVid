@@ -1,4 +1,4 @@
-package com.javashell.video.egressors.cl;
+package com.javashell.video.egressors.experimental;
 
 import java.awt.Dimension;
 import java.awt.image.BufferedImage;
@@ -66,9 +66,6 @@ public class QOIStreamEgressorC extends VideoEgress {
 			return frame;
 
 		bufFrame1 = frame;
-		synchronized (lock) {
-			lock.notify();
-		}
 
 		return frame;
 	}
@@ -108,11 +105,138 @@ public class QOIStreamEgressorC extends VideoEgress {
 		}
 	}
 
-	private native byte[] encodeB(byte[] data, byte[] prev, int width, int height, int channels, int colorspace,
-			boolean isKeyFrame);
+	private native byte[] encode(byte[] data, int width, int height, int channels, int colorspace, boolean isKeyFrame);
+	
+	private native static byte[] _convertAndCompareB(byte[] current, byte[] prev, int width, int height, int channels);
 
-	private native byte[] encodeI(int[] data, int[] prev, int width, int height, int channels, int colorspace,
-			boolean isKeyFrame);
+	private native static byte[] _convertAndCompareI(int[] current, int[] prev, int width, int height, int channels);
+
+	private native static byte[] _convertDontCompareB(byte[] current, int width, int height, int channels);
+
+	private native static byte[] _convertDontCompareI(int[] current, int width, int height, int channels);
+
+	// Create the individual segments to be encoded, comparing them to the previous
+	// image with the intent of setting duplicate pixels to transparent
+	private static byte[][] convertAndCompare(BufferedImage current, BufferedImage previous, int width, int height,
+			int subSegments, boolean isKey) {
+
+		if (current == null) {
+			return null;
+		}
+		if (previous == null) {
+			previous = new BufferedImage(width, height, current.getType());
+		}
+
+		final int yDelta = height / subSegments;
+
+		byte[][] rawData = new byte[subSegments][];
+
+		final DataBuffer currentBuf = current.getRaster().getDataBuffer();
+		final DataBuffer previousBuf = previous.getRaster().getDataBuffer();
+
+		byte[] currentBytes = null;
+		int[] currentInts = null;
+		byte[] previousBytes = null;
+		int[] previousInts = null;
+
+		if (currentBuf instanceof DataBufferByte) {
+			currentBytes = ((DataBufferByte) currentBuf).getData();
+		} else {
+			currentInts = ((DataBufferInt) currentBuf).getData();
+		}
+		if (previousBuf instanceof DataBufferByte) {
+			previousBytes = ((DataBufferByte) previousBuf).getData();
+		} else {
+			previousInts = ((DataBufferInt) previousBuf).getData();
+		}
+
+		int channels = (current.getAlphaRaster() != null) ? 4 : 3;
+		byte[] initalizedImage;
+		if (!isKey) {
+			if (currentBuf instanceof DataBufferInt) {
+				initalizedImage = _convertAndCompareI(currentInts, previousInts, width, height, channels);
+			} else {
+				initalizedImage = _convertAndCompareB(currentBytes, previousBytes, width, height, channels);
+			}
+		} else {
+			if (currentBuf instanceof DataBufferInt) {
+				initalizedImage = _convertDontCompareI(currentInts, width, height, channels);
+			} else {
+				initalizedImage = _convertDontCompareB(currentBytes, width, height, channels);
+			}
+		}
+
+		int subSize = width * yDelta * 4;
+		for (int nSegments = 0; nSegments < subSegments; nSegments++) {
+			rawData[nSegments] = Arrays.copyOfRange(initalizedImage, nSegments * subSize,
+					(nSegments * subSize) + subSize);
+		}
+		return rawData;
+	}
+
+	private static byte[] convertBufferedImageToByteArray(final BufferedImage image, int segment) {
+		if (image == null) {
+			return null;
+		}
+
+		int width = image.getWidth();
+		int height = image.getHeight();
+		int numComponents = 4; // Assuming 4 components (RGBA) per pixel
+		boolean hasAlpha = image.getAlphaRaster() != null;
+		final byte[] imageData = new byte[width * height * numComponents];
+
+		System.out.println("" + width + "x" + height);
+
+		final DataBuffer buf = image.getRaster().getDataBuffer();
+
+		if (buf instanceof DataBufferInt) {
+			final int[] pixelData = ((DataBufferInt) image.getRaster().getDataBuffer()).getData();
+			System.out.println(imageData.length + " - " + pixelData.length);
+			if (!hasAlpha) {
+				var pixIndex = 0;
+				var imageIndex = 0;
+				while (imageIndex < imageData.length) {
+					imageData[imageIndex + 3] = (byte) 255;
+					imageData[imageIndex] = (byte) pixelData[pixIndex + 2];
+					imageData[imageIndex + 1] = (byte) pixelData[pixIndex + 1];
+					imageData[imageIndex + 2] = (byte) pixelData[pixIndex];
+					imageIndex += 4;
+					pixIndex += 3;
+				}
+			} else {
+				for (int i = 0; i < imageData.length; i += 4) {
+					imageData[i + 3] = (byte) pixelData[i];
+					imageData[i] = (byte) pixelData[i + 3];
+					imageData[i + 1] = (byte) pixelData[i + 2];
+					imageData[i + 2] = (byte) pixelData[i + 1];
+				}
+			}
+		} else {
+			final byte[] pixelData = ((DataBufferByte) image.getRaster().getDataBuffer()).getData();
+			System.out.println(imageData.length + " - " + pixelData.length);
+			if (!hasAlpha) {
+				var pixIndex = 0;
+				var imageIndex = 0;
+				while (imageIndex < imageData.length) {
+					imageData[imageIndex + 3] = (byte) 255;
+					imageData[imageIndex] = pixelData[pixIndex + 2];
+					imageData[imageIndex + 1] = pixelData[pixIndex + 1];
+					imageData[imageIndex + 2] = pixelData[pixIndex];
+					imageIndex += 4;
+					pixIndex += 3;
+				}
+			} else {
+				for (int i = 0; i < imageData.length; i += 4) {
+					imageData[i + 3] = pixelData[i];
+					imageData[i] = pixelData[i + 3];
+					imageData[i + 1] = pixelData[i + 2];
+					imageData[i + 2] = pixelData[i + 1];
+				}
+			}
+		}
+
+		return imageData;
+	}
 
 	@Override
 	public boolean close() {
@@ -133,10 +257,7 @@ public class QOIStreamEgressorC extends VideoEgress {
 				try {
 					long curTime = System.nanoTime();
 					if (curTime - lastTime >= frameRateInterval) {
-						System.err.println("Encoder1 took too long, " + (curTime - lastTime));
-					}
-					synchronized (lock) {
-						lock.wait();
+						// System.err.println("Encoder1 took too long, " + (curTime - lastTime));
 					}
 					if (bufFrame1 == null) {
 						System.out.println("1 null");
@@ -149,64 +270,27 @@ public class QOIStreamEgressorC extends VideoEgress {
 					byte[][] encodedSubImages = new byte[subSegments][];
 
 					final boolean isKey = framesSinceKey == keyFrameInterval;
-					final int channels = (bufFrame1.getAlphaRaster() != null) ? 4 : 3;
-					final int subSize = width * yDelta * channels;
-
-					if (bufFrame0 == null) {
-						bufFrame0 = new BufferedImage(width, getResolution().height, bufFrame1.getType());
-					}
-
-					final DataBuffer currentBuf = bufFrame1.getRaster().getDataBuffer();
-					final DataBuffer previousBuf = bufFrame0.getRaster().getDataBuffer();
-
-					byte[] currentBytes = null;
-					int[] currentInts = null;
-					byte[] previousBytes = null;
-					int[] previousInts = null;
-
-					if (currentBuf instanceof DataBufferByte) {
-						currentBytes = ((DataBufferByte) currentBuf).getData();
-					} else {
-						currentInts = ((DataBufferInt) currentBuf).getData();
-					}
-					if (previousBuf instanceof DataBufferByte) {
-						previousBytes = ((DataBufferByte) previousBuf).getData();
-					} else {
-						previousInts = ((DataBufferInt) previousBuf).getData();
-					}
+					byte[][] rgbImages = convertAndCompare(bufFrame1, bufFrame0, width, getResolution().height,
+							subSegments, isKey);
 
 					ExecutorService es = Executors.newCachedThreadPool();
 
 					for (int i = 0; i < subSegments; i++) {
 						final int index = i;
-						if (currentBuf instanceof DataBufferByte) {
-							final byte[] frameBytes = Arrays.copyOfRange(currentBytes, index * subSize,
-									(index * subSize) + subSize);
-							final byte[] prevBytes = Arrays.copyOfRange(previousBytes, index * subSize,
-									(index * subSize) + subSize);
-							es.execute(new Runnable() {
-								public void run() {
-									encodedSubImages[index] = encodeB(frameBytes, prevBytes, width, yDelta, channels, 0,
-											isKey);
-								}
-							});
-						} else {
-							final int[] frameBytes = Arrays.copyOfRange(currentInts, index * subSize,
-									(index * subSize) + subSize);
-							final int[] prevBytes = Arrays.copyOfRange(previousInts, index * subSize,
-									(index * subSize) + subSize);
-							es.execute(new Runnable() {
-								public void run() {
-									encodedSubImages[index] = encodeI(frameBytes, prevBytes, width, yDelta, channels, 0,
-											isKey);
-								}
-							});
-						}
+						final byte[] frameBytes = rgbImages[index];
+						es.execute(new Runnable() {
+							public void run() {
+								encodedSubImages[index] = encode(frameBytes, width, yDelta, 4, 0, isKey);
+							}
+						});
 					}
 					es.shutdown();
 					es.awaitTermination(1, TimeUnit.SECONDS);
-					encodedBuffer0 = encodedSubImages;
-
+					synchronized (lock) {
+						encodedBuffer0 = encodedSubImages;
+						lock.notify();
+						lock.wait();
+					}
 					bufFrame0 = bufFrame1;
 					if (framesSinceKey == keyFrameInterval)
 						framesSinceKey = 0;
@@ -236,6 +320,9 @@ public class QOIStreamEgressorC extends VideoEgress {
 			while (isRunning) {
 				if (System.nanoTime() - lastTime >= frameRateInterval) {
 					try {
+						synchronized (lock) {
+							lock.wait();
+						}
 						if (encodedBuffer0 == null) {
 							Thread.sleep(10);
 							System.out.println("egress null");
@@ -259,6 +346,9 @@ public class QOIStreamEgressorC extends VideoEgress {
 								clients.remove(client);
 							}
 
+						}
+						synchronized (lock) {
+							lock.notify();
 						}
 					} catch (Exception e) {
 						e.printStackTrace();
