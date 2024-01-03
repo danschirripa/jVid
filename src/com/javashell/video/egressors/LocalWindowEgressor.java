@@ -27,6 +27,8 @@ public class LocalWindowEgressor extends VideoEgress {
 		egressFrame.setSize(resolution);
 		egressFrame.setTitle("Local Window Egressor");
 
+		curFrame = new BufferedImage(resolution.width, resolution.height, BufferedImage.TYPE_INT_ARGB);
+
 		egressPanel = new JPanel() {
 
 			@Override
@@ -44,8 +46,7 @@ public class LocalWindowEgressor extends VideoEgress {
 
 	@Override
 	public BufferedImage processFrame(BufferedImage frame) {
-		curFrame = null;
-		curFrame = frame;
+		curFrame.getGraphics().drawImage(frame, 0, 0, egressFrame);
 		if (egressFrame.isVisible()) {
 			try {
 				egressFrame.repaint();

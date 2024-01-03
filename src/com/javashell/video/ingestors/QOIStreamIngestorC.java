@@ -74,22 +74,27 @@ public class QOIStreamIngestorC extends VideoIngestor {
 		this.sock = new Socket();
 		decoderThreads = new Thread[numThreads];
 		bufBytes = new byte[numThreads][subSegments][];
-		final DecoderRunnable[] decRunners = new DecoderRunnable[numThreads];
 
-		for (int i = 0; i < numThreads; i++) {
-			decRunners[i] = new DecoderRunnable(i);
-		}
+		if (numThreads == 1) {
+			decoderThreads[0] = new Thread(new SingleDecoderRunnable());
+		} else {
+			final DecoderRunnable[] decRunners = new DecoderRunnable[numThreads];
 
-		for (int i = 0; i < numThreads; i++) {
-			final DecoderRunnable decRun = decRunners[i];
-			final DecoderRunnable nextDec = (i + 1 == numThreads) ? decRunners[0] : decRunners[i + 1];
-			decRun.setThisThread(decRun);
-			decRun.setNextThread(nextDec);
-		}
-		for (int i = 0; i < numThreads; i++) {
-			Thread decThread = new Thread(decRunners[i]);
-			decThread.setName("Dec" + i);
-			decoderThreads[i] = decThread;
+			for (int i = 0; i < numThreads; i++) {
+				decRunners[i] = new DecoderRunnable(i);
+			}
+
+			for (int i = 0; i < numThreads; i++) {
+				final DecoderRunnable decRun = decRunners[i];
+				final DecoderRunnable nextDec = (i + 1 == numThreads) ? decRunners[0] : decRunners[i + 1];
+				decRun.setThisThread(decRun);
+				decRun.setNextThread(nextDec);
+			}
+			for (int i = 0; i < numThreads; i++) {
+				Thread decThread = new Thread(decRunners[i]);
+				decThread.setName("Dec" + i);
+				decoderThreads[i] = decThread;
+			}
 		}
 	}
 
@@ -211,7 +216,7 @@ public class QOIStreamIngestorC extends VideoIngestor {
 
 					final BufferedImage tmpFrame = toBufferedImageAbgr(width, height, decodedImage);
 					synchronized (bufFrame) {
-						bufFrame = tmpFrame;
+						bufFrame.getGraphics().drawImage(tmpFrame, 0, 0, width, height, null);
 					}
 					synchronized (nextThread) {
 						nextThread.notify();
@@ -231,9 +236,66 @@ public class QOIStreamIngestorC extends VideoIngestor {
 		}
 	}
 
+	private class SingleDecoderRunnable implements Runnable {
+		private int width = getResolution().width, height = getResolution().height;
+
+		public void run() {
+			long lastTime = System.nanoTime();
+			while (true) {
+				try {
+
+					if (bufBytes[0] == null) {
+						System.out.println(1 + " null");
+						continue;
+					}
+					if (bufBytes[0].length < subSegments) {
+						System.out.println("Bad subsegs");
+						continue;
+					}
+					if (bufBytes[0][0] == null) {
+						System.out.println("No data");
+						continue;
+					}
+					lastTime = System.nanoTime();
+
+					byte[][] decodedRGB = new byte[subSegments][];
+					ExecutorService es = Executors.newCachedThreadPool();
+
+					for (int i = 0; i < subSegments; i++) {
+						final int index = i;
+						es.execute(new Runnable() {
+							public void run() {
+								decodedRGB[index] = decode(bufBytes[0][index], bufBytes[0][index].length);
+							}
+						});
+					}
+					es.shutdown();
+					es.awaitTermination(1, TimeUnit.SECONDS);
+
+					int totalSize = 0;
+					for (int i = 0; i < subSegments; i++) {
+						totalSize += decodedRGB[i].length;
+					}
+					final byte[] decodedImage = new byte[totalSize];
+					ByteBuffer buf = ByteBuffer.wrap(decodedImage);
+					for (int i = 0; i < subSegments; i++)
+						buf.put(decodedRGB[i]);
+
+					final BufferedImage tmpFrame = toBufferedImageAbgr(width, height, decodedImage);
+					synchronized (bufFrame) {
+						bufFrame.getGraphics().drawImage(tmpFrame, 0, 0, width, height, null);
+					}
+
+					lastTime = System.nanoTime();
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		}
+	}
+
 	BufferedImage toBufferedImageAbgr(int width, int height, byte[] abgrData) {
 		final DataBuffer dataBuffer = new DataBufferByte(abgrData, width * height * 4, 0);
-		System.out.println(abgrData.length);
 		final ColorModel colorModel = new ComponentColorModel(ColorSpace.getInstance(ColorSpace.CS_sRGB),
 				new int[] { 8, 8, 8, 8 }, true, false, Transparency.OPAQUE, DataBuffer.TYPE_BYTE);
 		final WritableRaster raster = Raster.createInterleavedRaster(dataBuffer, width, height, width * 4, 4,
