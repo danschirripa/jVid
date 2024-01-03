@@ -39,6 +39,7 @@ public class QOIStreamIngestorC extends VideoIngestor {
 	private static byte[][][] bufBytes;
 	private static int lastBufByte = 1, subSegments = 12;
 	private boolean isMulticast = false;
+	private final String lock = "", lock1 = "";
 
 	static {
 		try {
@@ -100,6 +101,13 @@ public class QOIStreamIngestorC extends VideoIngestor {
 
 	@Override
 	public BufferedImage processFrame(BufferedImage frame) {
+		try {
+			synchronized (lock) {
+				lock.wait();
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 		curFrame = bufFrame;
 		return curFrame;
 	}
@@ -243,7 +251,9 @@ public class QOIStreamIngestorC extends VideoIngestor {
 			long lastTime = System.nanoTime();
 			while (true) {
 				try {
-
+					synchronized (lock1) {
+						lock1.wait();
+					}
 					if (bufBytes[0] == null) {
 						System.out.println(1 + " null");
 						continue;
@@ -283,7 +293,11 @@ public class QOIStreamIngestorC extends VideoIngestor {
 
 					final BufferedImage tmpFrame = toBufferedImageAbgr(width, height, decodedImage);
 					synchronized (bufFrame) {
-						bufFrame.getGraphics().drawImage(tmpFrame, 0, 0, width, height, null);
+						bufFrame = tmpFrame;
+					}
+
+					synchronized (lock) {
+						lock.notify();
 					}
 
 					lastTime = System.nanoTime();
@@ -325,7 +339,9 @@ public class QOIStreamIngestorC extends VideoIngestor {
 							bufBytes[lastBufByte][i] = imageBytes;
 						}
 						lastBufByte++;
-
+						synchronized (lock1) {
+							lock1.notify();
+						}
 					} catch (Exception e) {
 						e.printStackTrace();
 						in.readAllBytes();

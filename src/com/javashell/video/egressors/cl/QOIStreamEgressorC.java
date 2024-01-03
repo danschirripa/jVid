@@ -25,7 +25,7 @@ public class QOIStreamEgressorC extends VideoEgress {
 	private static HashSet<Socket> clients;
 	private static byte[][] encodedBuffer0;
 	private static BufferedImage bufFrame0, bufFrame1;
-	private static final String lock = "";
+	private static final String lock = "", lock1 = "";
 	private static int lastBuf = 1, subSegments = 12;
 	private static long lastTime;
 	private static boolean isRunning;
@@ -208,6 +208,9 @@ public class QOIStreamEgressorC extends VideoEgress {
 					encodedBuffer0 = encodedSubImages;
 
 					bufFrame0 = bufFrame1;
+					synchronized (lock1) {
+						lock1.notify();
+					}
 					if (framesSinceKey == keyFrameInterval)
 						framesSinceKey = 0;
 					else
@@ -236,6 +239,9 @@ public class QOIStreamEgressorC extends VideoEgress {
 			while (isRunning) {
 				if (System.nanoTime() - lastTime >= frameRateInterval) {
 					try {
+						synchronized (lock1) {
+							lock1.wait();
+						}
 						if (encodedBuffer0 == null) {
 							Thread.sleep(10);
 							System.out.println("egress null");
