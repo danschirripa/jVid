@@ -1,10 +1,9 @@
 package com.javashell.video.test;
 
 import java.awt.Dimension;
+import java.io.File;
 import java.net.MalformedURLException;
-import java.net.URL;
 
-import com.badlogic.gdx.graphics.Pixmap;
 import com.javashell.flow.FlowController;
 import com.javashell.flow.FlowNode;
 import com.javashell.flow.VideoFlowNode;
@@ -15,9 +14,10 @@ import com.javashell.video.ingestors.FFMPEGIngestor;
 
 public class FFMPEG_to_QOIStream_Egressor_C {
 	public static void main(String[] args) throws MalformedURLException {
-		URL streamURL = new URL(args[0]);
-		Dimension resolution = new Dimension(640, 360);
-		FFMPEGIngestor ingest = new FFMPEGIngestor(resolution, streamURL);
+		// URL streamURL = new URL(args[0]);
+		File streamDevice = new File("/dev/video0");
+		Dimension resolution = new Dimension(752, 582);
+		FFMPEGIngestor ingest = new FFMPEGIngestor(resolution, streamDevice);
 		QOIStreamEgressorC egress = new QOIStreamEgressorC(resolution);
 		LocalWindowEgressor preview = new LocalWindowEgressor(resolution);
 
@@ -28,7 +28,7 @@ public class FFMPEG_to_QOIStream_Egressor_C {
 		egressNode.setEgressDestinationNode(previewNode);
 
 		FlowController.registerFlowNode(ingressNode);
-		
+
 		ingest.open();
 		egress.open();
 		preview.open();

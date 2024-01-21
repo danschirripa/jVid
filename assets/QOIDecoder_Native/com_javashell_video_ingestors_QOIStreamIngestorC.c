@@ -15,19 +15,19 @@ JNIEXPORT jbyteArray JNICALL Java_com_javashell_video_ingestors_QOIStreamIngesto
     size_t raw_image_length, seek;
 
     qoi_desc_init(&desc);
-    read_qoi_header(&desc, data);
-    seek = 0;
-
-    qoi_dec_init(&desc, &dec, data, encodedDataSize);
-
+    
     if (!read_qoi_header(&desc, data))
     {
         printf("The file you opened is not a QOIF file\n");
         return encodedData;
     }
+    seek = 0;
+
+    qoi_dec_init(&desc, &dec, data, encodedDataSize);
+
+
 
     raw_image_length = (size_t)desc.width * (size_t)desc.height * (size_t)desc.channels;
-    //printf("RAW IMAGE LENGTH %d\n", raw_image_length);
     size_t bytes_length = (size_t) (raw_image_length * sizeof(unsigned char));
 
     bytes = (unsigned char*)malloc(bytes_length);

@@ -108,8 +108,7 @@ public class QOIStreamIngestorC extends VideoIngestor {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		curFrame = bufFrame;
-		return curFrame;
+		return bufFrame;
 	}
 
 	@Override
@@ -126,9 +125,11 @@ public class QOIStreamIngestorC extends VideoIngestor {
 			} else {
 				captureThread = new Thread(new UnicastRunnable());
 			}
+			captureThread.setName("QOIIngress");
 			captureThread.start();
 
 			for (Thread t : decoderThreads) {
+				t.setName("QOIDec");
 				t.start();
 			}
 			return true;
@@ -293,7 +294,7 @@ public class QOIStreamIngestorC extends VideoIngestor {
 
 					final BufferedImage tmpFrame = toBufferedImageAbgr(width, height, decodedImage);
 					synchronized (bufFrame) {
-						bufFrame = tmpFrame;
+						bufFrame.getGraphics().drawImage(tmpFrame, 0, 0, width, height, null);
 					}
 
 					synchronized (lock) {
@@ -348,9 +349,7 @@ public class QOIStreamIngestorC extends VideoIngestor {
 						out.write((byte) 0);
 					}
 				}
-			} catch (
-
-			Exception e) {
+			} catch (Exception e) {
 				e.printStackTrace();
 			}
 		}

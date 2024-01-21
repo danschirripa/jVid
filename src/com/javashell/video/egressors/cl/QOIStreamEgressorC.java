@@ -224,51 +224,44 @@ public class QOIStreamEgressorC extends VideoEgress {
 	}
 
 	private class EgressRunnable implements Runnable {
-		private long frameRateMS = 0;
-		private int frameRateNS = 0;
-
 		public void run() {
-
-			if (frameRateInterval > 999999) {
-				frameRateMS = frameRateInterval / 1000000;
-				frameRateNS = (int) (frameRateInterval % 1000000);
-			} else
-				frameRateNS = (int) frameRateInterval;
-
 			lastTime = System.nanoTime();
 			while (isRunning) {
-				if (System.nanoTime() - lastTime >= frameRateInterval) {
-					try {
-						synchronized (lock1) {
-							lock1.wait();
-						}
-						if (encodedBuffer0 == null) {
-							Thread.sleep(10);
-							System.out.println("egress null");
-							continue;
-						}
-						final byte[][] qoiBytes = encodedBuffer0;
-						for (Socket client : clients) {
-							try {
-								for (int i = 0; i < subSegments; i++) {
-									final byte[] size = intToBytes(qoiBytes[i].length);
-									if (qoiBytes[i].length <= 0) {
-										System.err.println("Size of 0 detected");
-										i--;
-										continue;
-									}
-									client.getOutputStream().write(size);
-									client.getOutputStream().write(qoiBytes[i]);
-								}
-							} catch (Exception e) {
-								e.printStackTrace();
-								clients.remove(client);
-							}
-
-						}
-					} catch (Exception e) {
-						e.printStackTrace();
+				long diff = System.nanoTime() - lastTime;
+				if (diff > frameRateInterval) {
+					System.err.println("Egress took too long " + diff);
+				}
+				try {
+					synchronized (lock1) {
+						lock1.wait();
 					}
+					if (encodedBuffer0 == null) {
+						Thread.sleep(10);
+						System.out.println("egress null");
+						continue;
+					}
+					final byte[][] qoiBytes = encodedBuffer0;
+					for (Socket client : clients) {
+						try {
+							for (int i = 0; i < subSegments; i++) {
+								final byte[] size = intToBytes(qoiBytes[i].length);
+								if (qoiBytes[i].length <= 0) {
+									System.err.println("Size of 0 detected");
+									i--;
+									continue;
+								}
+								client.getOutputStream().write(size);
+								client.getOutputStream().write(qoiBytes[i]);
+							}
+						} catch (Exception e) {
+							e.printStackTrace();
+							clients.remove(client);
+						}
+
+					}
+					lastTime = System.nanoTime();
+				} catch (Exception e) {
+					e.printStackTrace();
 				}
 			}
 		}
