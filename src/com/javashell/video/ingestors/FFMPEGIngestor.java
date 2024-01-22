@@ -92,6 +92,8 @@ public class FFMPEGIngestor extends VideoIngestor {
 	@Override
 	public boolean open() {
 		try {
+			grabber.setImageWidth(getResolution().width);
+			grabber.setImageHeight(getResolution().height);
 			grabber.start();
 			frameDelay = (int) (1 / grabber.getFrameRate() * 1000);
 			isOpen = true;

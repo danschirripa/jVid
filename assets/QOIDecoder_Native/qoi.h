@@ -577,12 +577,12 @@ void *qoi_decode(const void *data, int size, qoi_desc *desc, int channels) {
 			index[QOI_COLOR_HASH(px) % 64] = px;
 		}
 
-		pixels[px_pos + 0] = px.rgba.r;
-		pixels[px_pos + 1] = px.rgba.g;
-		pixels[px_pos + 2] = px.rgba.b;
+		pixels[px_pos + 1] = px.rgba.b;
+		pixels[px_pos + 2] = px.rgba.g;
+		pixels[px_pos + 3] = px.rgba.r;
 		
 		if (channels == 4) {
-			pixels[px_pos + 3] = px.rgba.a;
+			pixels[px_pos + 0] = px.rgba.a;
 		}
 	}
 

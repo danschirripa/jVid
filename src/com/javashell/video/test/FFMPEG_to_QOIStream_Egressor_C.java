@@ -16,7 +16,7 @@ public class FFMPEG_to_QOIStream_Egressor_C {
 	public static void main(String[] args) throws MalformedURLException {
 		// URL streamURL = new URL(args[0]);
 		File streamDevice = new File("/dev/video0");
-		Dimension resolution = new Dimension(752, 582);
+		Dimension resolution = new Dimension(640, 480);
 		FFMPEGIngestor ingest = new FFMPEGIngestor(resolution, streamDevice);
 		QOIStreamEgressorC egress = new QOIStreamEgressorC(resolution);
 		LocalWindowEgressor preview = new LocalWindowEgressor(resolution);

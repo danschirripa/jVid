@@ -106,7 +106,7 @@ public class QOIStreamEgressorC extends VideoEgress {
 	}
 
 	private native byte[] encode(byte[] data, int width, int height, int channels, int colorspace, boolean isKeyFrame);
-	
+
 	private native static byte[] _convertAndCompareB(byte[] current, byte[] prev, int width, int height, int channels);
 
 	private native static byte[] _convertAndCompareI(int[] current, int[] prev, int width, int height, int channels);
@@ -269,7 +269,8 @@ public class QOIStreamEgressorC extends VideoEgress {
 					final int yDelta = getResolution().height / subSegments;
 					byte[][] encodedSubImages = new byte[subSegments][];
 
-					final boolean isKey = framesSinceKey == keyFrameInterval;
+					// final boolean isKey = framesSinceKey == keyFrameInterval;
+					boolean isKey = true;
 					byte[][] rgbImages = convertAndCompare(bufFrame1, bufFrame0, width, getResolution().height,
 							subSegments, isKey);
 
