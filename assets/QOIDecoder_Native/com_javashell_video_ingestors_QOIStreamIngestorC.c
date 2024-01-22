@@ -8,9 +8,10 @@
 JNIEXPORT jbyteArray JNICALL Java_com_javashell_video_ingestors_QOIStreamIngestorC_decode
   (JNIEnv* env, jobject obj, jbyteArray encodedData, jint encodedDataSize){
     uint8_t* data = (uint8_t*) env->GetByteArrayElements(encodedData, NULL);
-    qoi_desc* desc;
-
-    uint8_t* bytes = (uint8_t*) qoi_decode(data, encodedDataSize, desc, 4);
+    qoi_desc desc;
+    printf("Started decode");
+    uint8_t* bytes = (uint8_t*) qoi_decode(data, encodedDataSize, &desc, 4);
+    printf("Decode complete");
 
     size_t raw_image_length = (size_t)desc->width * (size_t)desc->height * (size_t)desc->channels;
     size_t bytes_length = (size_t) (raw_image_length * sizeof(unsigned char));
