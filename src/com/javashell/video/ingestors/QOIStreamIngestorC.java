@@ -20,6 +20,7 @@ import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -37,7 +38,7 @@ public class QOIStreamIngestorC extends VideoIngestor {
 	private static long frameRateInterval = (long) 16.3 * 1000000;
 	private static byte[][] bufBytes0, bufBytes1;
 	private static byte[][][] bufBytes;
-	private static int lastBufByte = 1, subSegments = 12;
+	private static int lastBufByte = 1, subSegments = 20;
 	private boolean isMulticast = false;
 	private final String lock = "", lock1 = "";
 
@@ -101,13 +102,6 @@ public class QOIStreamIngestorC extends VideoIngestor {
 
 	@Override
 	public BufferedImage processFrame(BufferedImage frame) {
-		try {
-			synchronized (lock) {
-				lock.wait();
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
 		return bufFrame;
 	}
 
@@ -116,7 +110,8 @@ public class QOIStreamIngestorC extends VideoIngestor {
 		try {
 			GraphicsConfiguration gc = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice()
 					.getDefaultConfiguration();
-			bufFrame = gc.createCompatibleImage(getResolution().width, getResolution().height);
+			bufFrame = new BufferedImage(getResolution().width, getResolution().height, BufferedImage.TYPE_4BYTE_ABGR);
+			sock.setReceiveBufferSize(87380);
 			sock.connect(new InetSocketAddress(ip, port));
 			Thread captureThread;
 			isOpen = true;
@@ -223,9 +218,10 @@ public class QOIStreamIngestorC extends VideoIngestor {
 					for (int i = 0; i < subSegments; i++)
 						buf.put(decodedRGB[i]);
 
-					final BufferedImage tmpFrame = toBufferedImageAbgr(width, height, decodedImage);
 					synchronized (bufFrame) {
-						bufFrame.getGraphics().drawImage(tmpFrame, 0, 0, width, height, null);
+						System.arraycopy(decodedImage, 0,
+								((DataBufferByte) bufFrame.getRaster().getDataBuffer()).getData(), 0,
+								decodedImage.length);
 					}
 					synchronized (nextThread) {
 						nextThread.notify();
@@ -270,7 +266,7 @@ public class QOIStreamIngestorC extends VideoIngestor {
 					lastTime = System.nanoTime();
 
 					byte[][] decodedRGB = new byte[subSegments][];
-					ExecutorService es = Executors.newCachedThreadPool();
+					ExecutorService es = Executors.newFixedThreadPool(subSegments);
 
 					for (int i = 0; i < subSegments; i++) {
 						final int index = i;
@@ -282,6 +278,9 @@ public class QOIStreamIngestorC extends VideoIngestor {
 					}
 					es.shutdown();
 					es.awaitTermination(1, TimeUnit.SECONDS);
+					if (System.nanoTime() - lastTime > frameRateInterval) {
+						System.err.println("Decode took too long");
+					}
 
 					int totalSize = 0;
 					for (int i = 0; i < subSegments; i++) {
@@ -292,13 +291,10 @@ public class QOIStreamIngestorC extends VideoIngestor {
 					for (int i = 0; i < subSegments; i++)
 						buf.put(decodedRGB[i]);
 
-					final BufferedImage tmpFrame = toBufferedImageAbgr(width, height, decodedImage);
 					synchronized (bufFrame) {
-						bufFrame.getGraphics().drawImage(tmpFrame, 0, 0, width, height, null);
-					}
-
-					synchronized (lock) {
-						lock.notify();
+						System.arraycopy(decodedImage, 0,
+								((DataBufferByte) bufFrame.getRaster().getDataBuffer()).getData(), 0,
+								decodedImage.length);
 					}
 
 					lastTime = System.nanoTime();
