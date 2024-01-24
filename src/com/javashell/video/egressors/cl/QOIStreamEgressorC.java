@@ -26,7 +26,7 @@ public class QOIStreamEgressorC extends VideoEgress {
 	private static byte[][] encodedBuffer0;
 	private static BufferedImage bufFrame0, bufFrame1;
 	private static final String lock = "", lock1 = "";
-	private static int lastBuf = 1, subSegments = 12;
+	private static int subSegments = 20;
 	private static long lastTime;
 	private static boolean isRunning;
 	private static final long frameRateInterval = (long) 16.3 * 1000000;
@@ -84,6 +84,7 @@ public class QOIStreamEgressorC extends VideoEgress {
 					while (!server.isClosed()) {
 						try {
 							final Socket sock = server.accept();
+							sock.setSendBufferSize(87380);
 							clients.add(sock);
 							System.out.println("New client " + sock.getInetAddress().getCanonicalHostName());
 						} catch (Exception e) {
@@ -148,7 +149,9 @@ public class QOIStreamEgressorC extends VideoEgress {
 					final int yDelta = getResolution().height / subSegments;
 					byte[][] encodedSubImages = new byte[subSegments][];
 
-					final boolean isKey = framesSinceKey == keyFrameInterval;
+					boolean isKey = framesSinceKey == keyFrameInterval;
+					//boolean isKey = true;
+
 					final int channels = (bufFrame1.getAlphaRaster() != null) ? 4 : 3;
 					final int subSize = width * yDelta * channels;
 
@@ -175,7 +178,7 @@ public class QOIStreamEgressorC extends VideoEgress {
 						previousInts = ((DataBufferInt) previousBuf).getData();
 					}
 
-					ExecutorService es = Executors.newCachedThreadPool();
+					ExecutorService es = Executors.newFixedThreadPool(subSegments);
 
 					for (int i = 0; i < subSegments; i++) {
 						final int index = i;
