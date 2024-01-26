@@ -11,27 +11,19 @@ extern "C" {
 #define com_javashell_video_egressors_cl_QOIStreamEgressorC_frameRateInterval 16000000LL
 /*
  * Class:     com_javashell_video_egressors_cl_QOIStreamEgressorC
- * Method:    _convertAndCompareB
- * Signature: ([B[BIII)[B
+ * Method:    encodeB
+ * Signature: ([B[BIIIIZ)[B
  */
-JNIEXPORT jbyteArray JNICALL Java_com_javashell_video_egressors_cl_QOIStreamEgressorC__1convertAndCompareB
-  (JNIEnv *, jclass, jbyteArray, jbyteArray, jint, jint, jint);
+JNIEXPORT jbyteArray JNICALL Java_com_javashell_video_egressors_cl_QOIStreamEgressorC_encodeB
+  (JNIEnv *, jobject, jbyteArray, jbyteArray, jint, jint, jint, jint, jboolean);
 
 /*
  * Class:     com_javashell_video_egressors_cl_QOIStreamEgressorC
- * Method:    _convertAndCompareI
- * Signature: ([I[IIII)[B
+ * Method:    encodeI
+ * Signature: ([I[IIIIIZ)[B
  */
-JNIEXPORT jbyteArray JNICALL Java_com_javashell_video_egressors_cl_QOIStreamEgressorC__1convertAndCompareI
-  (JNIEnv *, jclass, jintArray, jintArray, jint, jint, jint);
-
-/*
- * Class:     com_javashell_video_egressors_cl_QOIStreamEgressorC
- * Method:    encode
- * Signature: ([BIIIIZ)[B
- */
-JNIEXPORT jbyteArray JNICALL Java_com_javashell_video_egressors_cl_QOIStreamEgressorC_encode
-  (JNIEnv *, jobject, jbyteArray, jint, jint, jint, jint, jboolean);
+JNIEXPORT jbyteArray JNICALL Java_com_javashell_video_egressors_cl_QOIStreamEgressorC_encodeI
+  (JNIEnv *, jobject, jintArray, jintArray, jint, jint, jint, jint, jboolean);
 
 #ifdef __cplusplus
 }

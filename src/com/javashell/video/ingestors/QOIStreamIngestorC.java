@@ -242,8 +242,6 @@ public class QOIStreamIngestorC extends VideoIngestor {
 	}
 
 	private class SingleDecoderRunnable implements Runnable {
-		private int width = getResolution().width, height = getResolution().height;
-
 		public void run() {
 			long lastTime = System.nanoTime();
 			while (true) {
@@ -265,7 +263,7 @@ public class QOIStreamIngestorC extends VideoIngestor {
 					}
 					lastTime = System.nanoTime();
 
-					byte[][] decodedRGB = new byte[subSegments][];
+					final byte[][] decodedRGB = new byte[subSegments][];
 					ExecutorService es = Executors.newFixedThreadPool(subSegments);
 
 					for (int i = 0; i < subSegments; i++) {
@@ -287,7 +285,7 @@ public class QOIStreamIngestorC extends VideoIngestor {
 						totalSize += decodedRGB[i].length;
 					}
 					final byte[] decodedImage = new byte[totalSize];
-					ByteBuffer buf = ByteBuffer.wrap(decodedImage);
+					final ByteBuffer buf = ByteBuffer.wrap(decodedImage);
 					for (int i = 0; i < subSegments; i++)
 						buf.put(decodedRGB[i]);
 
@@ -303,16 +301,6 @@ public class QOIStreamIngestorC extends VideoIngestor {
 				}
 			}
 		}
-	}
-
-	BufferedImage toBufferedImageAbgr(int width, int height, byte[] abgrData) {
-		final DataBuffer dataBuffer = new DataBufferByte(abgrData, width * height * 4, 0);
-		final ColorModel colorModel = new ComponentColorModel(ColorSpace.getInstance(ColorSpace.CS_sRGB),
-				new int[] { 8, 8, 8, 8 }, true, false, Transparency.OPAQUE, DataBuffer.TYPE_BYTE);
-		final WritableRaster raster = Raster.createInterleavedRaster(dataBuffer, width, height, width * 4, 4,
-				new int[] { 3, 2, 1, 0 }, null);
-		final BufferedImage image = new BufferedImage(colorModel, raster, false, null);
-		return image;
 	}
 
 	private native byte[] decode(byte[] image, int dataSize);

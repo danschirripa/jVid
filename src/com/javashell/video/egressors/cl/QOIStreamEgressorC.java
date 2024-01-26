@@ -149,8 +149,8 @@ public class QOIStreamEgressorC extends VideoEgress {
 					final int yDelta = getResolution().height / subSegments;
 					byte[][] encodedSubImages = new byte[subSegments][];
 
-					boolean isKey = framesSinceKey == keyFrameInterval;
-					//boolean isKey = true;
+					// boolean isKey = framesSinceKey == keyFrameInterval;
+					boolean isKey = true;
 
 					final int channels = (bufFrame1.getAlphaRaster() != null) ? 4 : 3;
 					final int subSize = width * yDelta * channels;

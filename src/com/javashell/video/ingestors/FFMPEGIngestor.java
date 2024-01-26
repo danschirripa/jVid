@@ -24,6 +24,7 @@ public class FFMPEGIngestor extends VideoIngestor {
 	private static BufferedImage curFrame, bufFrame;
 	private long lastFPS;
 	private int frameDelay = 16;
+	private final String lock = "";
 
 	static {
 		avutil.av_log_set_level(avutil.AV_LOG_QUIET);
@@ -62,6 +63,9 @@ public class FFMPEGIngestor extends VideoIngestor {
 				Frame javacvFrame;
 				while (isOpen) {
 					try {
+						synchronized (lock) {
+							lock.wait();
+						}
 						long startTime = System.nanoTime();
 						javacvFrame = grabber.grab();
 						while (javacvFrame.image == null) {
@@ -71,7 +75,6 @@ public class FFMPEGIngestor extends VideoIngestor {
 						bufFrame = conv.convert(javacvFrame);
 						long endTime = System.nanoTime();
 						lastFPS = (1000000000 / (endTime - startTime));
-						Thread.sleep(frameDelay);
 					} catch (Exception e) {
 						e.printStackTrace();
 					}
@@ -85,6 +88,9 @@ public class FFMPEGIngestor extends VideoIngestor {
 
 	@Override
 	public BufferedImage processFrame(BufferedImage frame) {
+		synchronized (lock) {
+			lock.notify();
+		}
 		curFrame = bufFrame;
 		return curFrame;
 	}
@@ -94,8 +100,10 @@ public class FFMPEGIngestor extends VideoIngestor {
 		try {
 			grabber.setImageWidth(getResolution().width);
 			grabber.setImageHeight(getResolution().height);
+			grabber.setNumBuffers(1);
 			grabber.start();
 			frameDelay = (int) (1 / grabber.getFrameRate() * 1000);
+			System.out.println(grabber.getFrameRate());
 			isOpen = true;
 			captureThread.start();
 		} catch (Exception e) {

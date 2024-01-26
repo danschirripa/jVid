@@ -15,11 +15,18 @@ import com.javashell.video.ingestors.FFMPEGIngestor;
 public class FFMPEG_to_QOIStream_Egressor_C {
 	public static void main(String[] args) throws MalformedURLException {
 		// URL streamURL = new URL(args[0]);
-		File streamDevice = new File("/dev/video0");
-		Dimension resolution = new Dimension(640, 480);
+		File streamDevice = new File(args[0]);
+
+		int width = 1920, height = 1080;
+		if (args.length == 3) {
+			width = Integer.parseInt(args[1]);
+			height = Integer.parseInt(args[2]);
+		}
+
+		Dimension resolution = new Dimension(width, height);
 		FFMPEGIngestor ingest = new FFMPEGIngestor(resolution, streamDevice);
 		QOIStreamEgressorC egress = new QOIStreamEgressorC(resolution);
-		LocalWindowEgressor preview = new LocalWindowEgressor(resolution);
+		LocalWindowEgressor preview = new LocalWindowEgressor(resolution, false);
 
 		FlowNode<VideoProcessor> ingressNode = new VideoFlowNode(ingest, null, null);
 		FlowNode<VideoProcessor> egressNode = new VideoFlowNode(egress, ingressNode, null);

@@ -1,0 +1,1 @@
+g++ -shared -fPIC -I"/home/dan/jdk-20.0.2+9/include" -I"/home/dan/jdk-20.0.2+9/include/linux" -I"/home/dan/NDI SDK for Linux/include"  -L. -l:libndi.so -o libNDIEncoder.so  com_javashell_video_egressors_NDI5Egressor.c 

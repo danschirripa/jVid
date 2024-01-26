@@ -16,6 +16,10 @@ public class LocalWindowEgressor extends VideoEgress {
 	private JPanel egressPanel;
 
 	public LocalWindowEgressor(Dimension resolution) {
+		this(resolution, true);
+	}
+
+	public LocalWindowEgressor(Dimension resolution, boolean doScale) {
 		super(resolution);
 
 		egressFrame = new JFrame("Local Window Egressor") {
@@ -33,7 +37,13 @@ public class LocalWindowEgressor extends VideoEgress {
 
 			@Override
 			public void paintComponent(Graphics g) {
-				g.drawImage(curFrame, 0, 0, resolution.width, resolution.height, egressFrame);
+				int width = resolution.width, height = resolution.height;
+				if (doScale) {
+					int ratio = egressFrame.getWidth() / width;
+					width = egressFrame.getWidth();
+					height = height * ratio;
+				}
+				g.drawImage(curFrame, 0, 0, width, height, egressFrame);
 			}
 		};
 		egressPanel.setSize(resolution);

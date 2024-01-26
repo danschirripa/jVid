@@ -14,10 +14,15 @@ import com.javashell.video.ingestors.QOIStreamIngestorC;
 
 public class QOIStream_to_local_Egressor_CL {
 	public static void main(String[] args) throws MalformedURLException {
-		Dimension resolution = new Dimension(1920, 1080);
+		int width = 1920, height = 1080;
+		if (args.length == 3) {
+			width = Integer.parseInt(args[1]);
+			height = Integer.parseInt(args[2]);
+		}
+		Dimension resolution = new Dimension(width, height);
 		QOIStreamIngestorC ingest = new QOIStreamIngestorC(resolution, args[0], 4500, false, 1);
-		ImageSeriesEgressor output = new ImageSeriesEgressor(resolution, new File("/home/dan/tmp"), 10);
-		LocalWindowEgressor preview = new LocalWindowEgressor(resolution);
+		ImageSeriesEgressor output = new ImageSeriesEgressor(resolution, new File("."), 10);
+		LocalWindowEgressor preview = new LocalWindowEgressor(resolution, true);
 
 		FlowNode<VideoProcessor> ingressNode = new VideoFlowNode(ingest, null, null);
 		FlowNode<VideoProcessor> outputNode = new VideoFlowNode(output, ingressNode, null);
