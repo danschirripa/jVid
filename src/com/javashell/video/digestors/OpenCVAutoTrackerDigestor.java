@@ -1,6 +1,8 @@
 package com.javashell.video.digestors;
 
+import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Graphics;
 import java.awt.Point;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBuffer;
@@ -28,7 +30,7 @@ import com.javashell.video.camera.PTZControlInterface;
 import com.javashell.video.camera.PTZMove;
 
 public class OpenCVAutoTrackerDigestor extends VideoDigestor implements ControlInterface {
-	private int digestionOffset = 30;
+	private int digestionOffset = 10;
 	private int digestionOffsetIndex = 0;
 	private Thread analyzationThread;
 	private Mat frame = null;
@@ -36,10 +38,11 @@ public class OpenCVAutoTrackerDigestor extends VideoDigestor implements ControlI
 	private CascadeClassifier classifier = new CascadeClassifier();
 	private HashSet<PTZControlInterface> controllers;
 	private Point lastCenterPoint;
+	private Rect faceRect;
 	private boolean doTrack = false;
 	private Camera cam;
 	private HashSet<ControlInterface> interfaces;
-	private static final Size minFaceSize = new Size(1080 * 0.1f, 1080 * 0.1f), maxFaceSize = new Size();
+	private static final Size minFaceSize = new Size(1080 * 0.15f, 1080 * 0.15f), maxFaceSize = new Size();
 	private double desiredFaceToFramePercentage = 20;
 	private final double totalArea;
 
@@ -57,6 +60,8 @@ public class OpenCVAutoTrackerDigestor extends VideoDigestor implements ControlI
 		super(resolution);
 		this.cam = cam;
 		InputStream cascadeInput = getClass().getResourceAsStream("/haarcascade_frontalface_default.xml");
+
+		distanceRange = resolution.width / 2.5;
 		// Read and load the "haarcascasde" classifier
 		try {
 			File tmpFile = File.createTempFile("cascade", ".xml");
@@ -85,7 +90,7 @@ public class OpenCVAutoTrackerDigestor extends VideoDigestor implements ControlI
 		Imgproc.cvtColor(frame, gray, Imgproc.COLOR_BGR2GRAY);
 		Imgproc.equalizeHist(gray, gray);
 
-		classifier.detectMultiScale(gray, faces, 1.1, 2, 0 | Objdetect.CASCADE_SCALE_IMAGE, minFaceSize, maxFaceSize);
+		classifier.detectMultiScale(gray, faces, 1.1, 3, 0 | Objdetect.CASCADE_SCALE_IMAGE, minFaceSize, maxFaceSize);
 
 		Rect[] facesArray = faces.toArray();
 		if (facesArray.length == 0)
@@ -98,19 +103,22 @@ public class OpenCVAutoTrackerDigestor extends VideoDigestor implements ControlI
 			Point nCenterPoint = new Point(f.x + (f.width / 2), f.y + (f.height / 2));
 			if (isInRange(nCenterPoint)) {
 				face = f;
+				this.faceRect = f;
 				centerPoint = nCenterPoint;
 				break;
 			}
 		}
 		if (!(centerPoint == null)) {
-			lastCenterPoint = centerPoint;
-			// System.out.println("Face @ " + centerPoint.toString());
-			// Calculate PTZ adjustment based on Camera specs, and send translated VISCA
-			// command over the serial port
+			if (lastCenterPoint == null) {
+				lastCenterPoint = centerPoint;
+			}
+			System.out.println("Face @ " + centerPoint.toString());
+			double faceDist = centerPoint.distance(lastCenterPoint);
+			System.out.println("Face dist: " + faceDist);
+
 			int[] ptAdjustment = cam.calculatePTZAdjustment(centerPoint);
-			// System.out.println("PAN:" + ptAdjustment[0] + " - " + ptAdjustment[2] + "
-			// TILT: " + ptAdjustment[1] + " - "
-			// + ptAdjustment[3]);
+			System.out.println("PAN:" + ptAdjustment[0] + " - " + ptAdjustment[2] + "TILT: " + ptAdjustment[1] + " - "
+					+ ptAdjustment[3]);
 
 			final double faceFramePercentage = (face.area() / totalArea) * 100;
 			int zoom = 0;
@@ -136,6 +144,7 @@ public class OpenCVAutoTrackerDigestor extends VideoDigestor implements ControlI
 				cf.PTZ(ptAdjustment[2] * 2, ptAdjustment[3] * 2, zoom);
 				cf.processControl(move);
 			}
+			lastCenterPoint = centerPoint;
 		} else {
 			PTZMove move = new PTZMove(0, 0, 0, 0, 0);
 			move.setCamera(cam);
@@ -147,6 +156,7 @@ public class OpenCVAutoTrackerDigestor extends VideoDigestor implements ControlI
 				for (PTZControlInterface cf : controllers) {
 					cf.HOME();
 				}
+				lastCenterPoint = null;
 				lastDetectionTime = System.currentTimeMillis();
 			}
 		}
@@ -156,6 +166,14 @@ public class OpenCVAutoTrackerDigestor extends VideoDigestor implements ControlI
 
 	@Override
 	public BufferedImage processFrame(BufferedImage frame) {
+		if (lastCenterPoint != null) {
+			Color old = frame.getGraphics().getColor();
+			Graphics frameg = frame.getGraphics();
+			frameg.setColor(Color.red);
+			frameg.fillOval(lastCenterPoint.x, lastCenterPoint.y, 10, 10);
+			frameg.drawRect(faceRect.x, faceRect.y, faceRect.width, faceRect.height);
+			// frame.getGraphics().setColor(old);
+		}
 		if (frame == null || !doTrack)
 			return frame;
 		if (digestionOffsetIndex == digestionOffset) {
@@ -186,7 +204,7 @@ public class OpenCVAutoTrackerDigestor extends VideoDigestor implements ControlI
 		if (lastCenterPoint == null)
 			return true;
 		double dist = Math.abs(Point.distance(p.getX(), p.getY(), lastCenterPoint.getX(), lastCenterPoint.getY()));
-		// System.out.println("DISTANCE " + dist);
+		System.out.println("DISTANCE " + dist);
 		if (dist < distanceRange)
 			return true;
 		return false;

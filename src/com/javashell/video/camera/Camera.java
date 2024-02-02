@@ -19,7 +19,7 @@ import com.javashell.video.ControlInterface;
  *
  */
 public class Camera {
-	private int maximumX, maximumY, imgCenterX, imgCenterY, fovDegrees;
+	private int maximumX, maximumY, imgCenterX, imgCenterY, fovDegrees, deltaXBound, deltaYBound;
 	private int horizontalAngularChangeMaximum, verticalAngularChangeMaximum;
 	private static Hashtable<String, Camera> cameraTypes = new Hashtable<String, Camera>();
 	private static File configurationFile = new File(System.getProperty("user.home") + "/.autotrack_camera_types");
@@ -43,6 +43,8 @@ public class Camera {
 		this.imgCenterX = this.maximumX / 2;
 		this.imgCenterY = this.maximumY / 2;
 		this.imageCenter = new Point(imgCenterX, imgCenterY);
+		this.deltaXBound = imgWidth / 30;
+		this.deltaYBound = imgHeight / 30;
 
 		this.horizontalAngularChangeMaximum = fovDegrees / 2;
 
@@ -114,7 +116,7 @@ public class Camera {
 		int deltaX = x - imageCenter.x;
 		int deltaY = (-1) * (y - imageCenter.y);
 
-		if ((deltaX < 20 && deltaX > -20) && (deltaY < 20 && deltaY > -20)) {
+		if ((deltaX < deltaXBound && deltaX > -(deltaXBound)) && (deltaY < deltaYBound && deltaY > -(deltaYBound))) {
 			return new int[] { 0, 0, 0, 0 };
 		}
 

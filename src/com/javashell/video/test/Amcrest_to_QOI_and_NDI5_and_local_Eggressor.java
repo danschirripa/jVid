@@ -13,8 +13,9 @@ import com.javashell.video.camera.Camera;
 import com.javashell.video.camera.extras.AmcrestCameraInterface;
 import com.javashell.video.egressors.LocalWindowEgressor;
 import com.javashell.video.egressors.NDI5Egressor;
+import com.javashell.video.egressors.cl.QOIStreamEgressorC;
 
-public class Amcrest_to_local_Eggressor {
+public class Amcrest_to_QOI_and_NDI5_and_local_Eggressor {
 	public static void main(String[] args)
 			throws IOException, URISyntaxException, InterruptedException, NoSuchAlgorithmException {
 		Camera IP2M_841 = Camera.getCamera("IP2M-841");
@@ -25,15 +26,18 @@ public class Amcrest_to_local_Eggressor {
 		// Dimension(1920, 1080), IP2M_841);
 
 		NDI5Egressor ndi5 = new NDI5Egressor(new Dimension(1920, 1080));
+		QOIStreamEgressorC qoi = new QOIStreamEgressorC(new Dimension(1920, 1080));
 		LocalWindowEgressor egress = new LocalWindowEgressor(new Dimension(1920, 1080), false);
 
 		FlowNode<VideoProcessor> ingressNode = new VideoFlowNode(amc, null, null);
 		// FlowNode<VideoProcessor> autoNode = new VideoFlowNode(auto, ingressNode,
 		// null);
-		FlowNode<VideoProcessor> ndiNode = new VideoFlowNode(ndi5, ingressNode, null);
+		FlowNode<VideoProcessor> qoiNode = new VideoFlowNode(qoi, ingressNode, null); 
+		FlowNode<VideoProcessor> ndiNode = new VideoFlowNode(ndi5, qoiNode, null);
 		FlowNode<VideoProcessor> egressNode = new VideoFlowNode(egress, ndiNode, null);
 
-		ingressNode.setEgressDestinationNode(ndiNode);
+		ingressNode.setEgressDestinationNode(qoiNode);
+		qoiNode.setEgressDestinationNode(ndiNode);
 		ndiNode.setEgressDestinationNode(egressNode);
 		// autoNode.setEgressDestinationNode(egressNode);
 
@@ -42,6 +46,7 @@ public class Amcrest_to_local_Eggressor {
 		FlowController.registerFlowNode(ingressNode);
 
 		amc.open();
+		qoi.open();
 		ndi5.open();
 		egress.open();
 		// auto.open();

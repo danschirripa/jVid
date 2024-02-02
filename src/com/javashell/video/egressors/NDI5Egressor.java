@@ -69,7 +69,7 @@ public class NDI5Egressor extends VideoEgress {
 		} else {
 			sendFrameI(((DataBufferInt) currentBuf).getData(), channels);
 		}
-		return null;
+		return frame;
 	}
 
 	@Override

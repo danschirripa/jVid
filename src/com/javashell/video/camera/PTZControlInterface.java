@@ -3,7 +3,7 @@ package com.javashell.video.camera;
 import com.javashell.video.ControlInterface;
 
 public interface PTZControlInterface extends ControlInterface {
-	public void PTZ(int tilt, int pan, int zoom);
+	public void PTZ(int pan, int tilt, int zoom);
 
 	public void IRIS(int in, int out);
 

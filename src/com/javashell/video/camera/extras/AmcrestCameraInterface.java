@@ -91,74 +91,112 @@ public class AmcrestCameraInterface extends VideoIngestor implements PTZControlI
 	}
 
 	@Override
-	public void PTZ(int tilt, int pan, int zoom) {
-		System.out.println(tilt + " - " + pan + " - " + zoom);
+	public void PTZ(int pan, int tilt, int zoom) {
+		System.out.println(pan + " - " + tilt + " - " + zoom);
 		try {
-			Map<String, String> params = new HashMap<String, String>();
-			String url = "http://" + host + "/cgi-bin/ptz.cgi?action=start&code=";
-			params.put("channel", "1");
-			if (tilt == 0 && pan == 0 && zoom == 0) {
-				url = "http://" + host + "/cgi-bin/ptz.cgi?action=stop&code=Up";
-			} else {
-				String code = "";
-				String arg1 = "0";
-				String arg2 = "0";
-				String tiltValue = "" + Math.abs((tilt * 8) / cam.getVerticalAngularChangeMax()) + "";
-				String panValue = "" + Math.abs((pan * 8) / cam.getVerticalAngularChangeMax()) + "";
-				System.out.println(code + " " + tiltValue + " - " + panValue);
-
-				if (tilt > 0 && pan > 0) {
-					code = "RightUp";
-					arg1 = tiltValue;
-					arg2 = panValue;
-				}
-				if (tilt > 0 && pan < 0) {
-					code = "LeftUp";
-					arg1 = tiltValue;
-					arg2 = panValue;
-				}
-				if (tilt < 0 && pan > 0) {
-					code = "RightDown";
-					arg1 = tiltValue;
-					arg2 = panValue;
-				}
-				if (tilt < 0 && pan < 0) {
-					code = "LeftDown";
-					arg1 = tiltValue;
-					arg2 = panValue;
-				}
-				if (tilt == 0 && pan > 0) {
-					code = "Right";
-					arg2 = panValue;
-				}
-				if (tilt == 0 && pan < 0) {
-					code = "Left";
-					arg2 = panValue;
-				}
-				if (tilt > 0 && pan == 0) {
-					code = "Up";
-					arg2 = tiltValue;
-				}
-				if (tilt < 0 && pan == 0) {
-					code = "Down";
-					arg2 = tiltValue;
-				}
-				params.put("arg1", arg1);
-				params.put("arg2", arg2);
-				params.put("arg3", "0");
-
-				url += code + "&" + getParamsString(params);
-			}
-			System.out.println(url);
-			HttpGet get = new HttpGet(url);
-			HttpResponse resp = client.execute(get);
-			System.out.println(resp.getStatusLine().getStatusCode() + " - " + url);
-			get.releaseConnection();
-
+			relativePTZ(pan, tilt, zoom);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 
+	}
+
+	private void relativePTZ(int pan, int tilt, int zoom) throws Exception {
+		Map<String, String> params = new HashMap<String, String>();
+		String url = "http://" + host + "/cgi-bin/ptz.cgi?action=moveRelatively";
+		params.put("channel", "1");
+		if (pan == 0 && tilt == 0 && zoom == 0) {
+			url = "http://" + host + "/cgi-bin/ptz.cgi?action=stop&code=Up&channel=1&arg1=0&arg2=0&arg3=0";
+		} else {
+			String tiltValue = "" + ((double) tilt) / getResolution().height + "";
+			String panValue = "" + ((double) pan) / getResolution().width + "";
+			String zoomValue = "" + ((zoom == 0) ? 0 : 0.01) + "";
+			if (zoom < 0) {
+				zoomValue = "-0.01";
+			}
+			System.out.println(tiltValue + " - " + panValue);
+
+			params.put("arg1", tiltValue);
+			params.put("arg2", panValue);
+			params.put("arg3", zoomValue);
+
+			url += "&" + "channel=1&arg1=" + panValue + "&arg2=" + tiltValue + "&arg3=" + zoomValue;
+		}
+		System.out.println(url);
+		HttpGet get = new HttpGet(url);
+		HttpResponse resp = client.execute(get);
+		System.out.println(resp.getStatusLine().getStatusCode() + " - " + url);
+		System.out.println();
+		get.releaseConnection();
+	}
+
+	private void indirrectPTZ(int pan, int tilt, int zoom) throws Exception {
+		Map<String, String> params = new HashMap<String, String>();
+		String url = "http://" + host + "/cgi-bin/ptz.cgi?action=start&code=";
+		params.put("channel", "1");
+		if (pan == 0 && tilt == 0 && zoom == 0) {
+			url = "http://" + host + "/cgi-bin/ptz.cgi?action=stop&code=Up&channel=1&arg1=0&arg2=0&arg3=0";
+		} else {
+			String code = "";
+			String arg1 = "0";
+			String arg2 = "0";
+			String tiltValue = "" + ((tilt == 0) ? 0 : 1) + "";
+			String panValue = "" + ((pan == 0) ? 0 : 1) + "";
+			System.out.println(code + " " + tiltValue + " - " + panValue);
+
+			if (tilt > 0 && pan > 0) {
+				code = "RightUp";
+				arg1 = tiltValue;
+				arg2 = panValue;
+			}
+			if (tilt > 0 && pan < 0) {
+				code = "LeftUp";
+				arg1 = tiltValue;
+				arg2 = panValue;
+			}
+			if (tilt < 0 && pan > 0) {
+				code = "RightDown";
+				arg1 = tiltValue;
+				arg2 = panValue;
+			}
+			if (tilt < 0 && pan < 0) {
+				code = "LeftDown";
+				arg1 = tiltValue;
+				arg2 = panValue;
+			}
+			if (tilt == 0 && pan > 0) {
+				code = "Right";
+				arg2 = panValue;
+			}
+			if (tilt == 0 && pan < 0) {
+				code = "Left";
+				arg2 = panValue;
+			}
+			if (tilt > 0 && pan == 0) {
+				code = "Up";
+				arg2 = tiltValue;
+			}
+			if (tilt < 0 && pan == 0) {
+				code = "Down";
+				arg2 = tiltValue;
+			}
+			if (zoom > 0) {
+				code = "ZoomTele";
+			}
+			if (zoom < 0) {
+				code = "ZoomWide";
+			}
+			params.put("arg1", arg1);
+			params.put("arg2", arg2);
+			params.put("arg3", "0");
+
+			url += code + "&" + getParamsString(params);
+		}
+		System.out.println(url);
+		HttpGet get = new HttpGet(url);
+		HttpResponse resp = client.execute(get);
+		System.out.println(resp.getStatusLine().getStatusCode() + " - " + url);
+		get.releaseConnection();
 	}
 
 	@Override
@@ -228,6 +266,29 @@ public class AmcrestCameraInterface extends VideoIngestor implements PTZControlI
 				BufferedImage.TYPE_INT_RGB);
 		nullFrame.getGraphics().setColor(java.awt.Color.CYAN);
 		nullFrame.getGraphics().fill3DRect(0, 0, getResolution().width, getResolution().height, true);
+	}
+
+	private void getPTZCapability() {
+		try {
+			Map<String, String> params = new HashMap<String, String>();
+			params.put("channel", "1");
+			String paramLine = getParamsString(params);
+
+			String url = "http://" + host + "/cgi-bin/ptz.cgi?action=getCurrentProtocolCaps";
+			HttpGet get = new HttpGet(url);
+			client.execute(get);
+			get.releaseConnection();
+
+			url = "http://" + host + "/cgi-bin/ptz.cgi?action=moveAbsolutely&" + paramLine;
+			System.out.println(url);
+
+			get = new HttpGet(url);
+			HttpResponse resp = client.execute(get);
+			System.out.println(resp.getStatusLine().getStatusCode());
+			get.releaseConnection();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 
 	private void init() {
