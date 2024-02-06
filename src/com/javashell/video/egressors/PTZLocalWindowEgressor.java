@@ -74,7 +74,7 @@ public class PTZLocalWindowEgressor extends VideoEgress implements ControlInterf
 			}
 
 		}
-		return null;
+		return frame;
 	}
 
 	@Override

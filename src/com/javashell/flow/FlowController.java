@@ -60,7 +60,7 @@ public class FlowController {
 					lastTime = System.nanoTime();
 					for (FlowNode<VideoProcessor> fn : processors) {
 						long startTime = System.nanoTime();
-						fn.triggerFrame(null);
+						fn.triggerFrame(null, null);
 						long endTime = System.nanoTime();
 						long deltaTime = endTime - startTime;
 						if (deltaTime > frameRateInterval) {

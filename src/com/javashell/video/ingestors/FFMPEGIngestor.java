@@ -100,7 +100,7 @@ public class FFMPEGIngestor extends VideoIngestor {
 		try {
 			grabber.setImageWidth(getResolution().width);
 			grabber.setImageHeight(getResolution().height);
-			grabber.setNumBuffers(1);
+			grabber.setNumBuffers(0);
 			grabber.start();
 			frameDelay = (int) (1 / grabber.getFrameRate() * 1000);
 			System.out.println(grabber.getFrameRate());

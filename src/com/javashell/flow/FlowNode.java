@@ -1,7 +1,9 @@
 package com.javashell.flow;
 
 import java.awt.image.BufferedImage;
+import java.util.UUID;
 
+import com.javashell.video.MultiplexedVideoProcessor;
 import com.javashell.video.VideoIngestor;
 import com.javashell.video.VideoProcessor;
 
@@ -9,11 +11,13 @@ public abstract class FlowNode<T> {
 	private final T content;
 	private FlowNode<T> ingestSource, egressDestination;
 	private boolean isIngest = false, isVideo = false;
+	private final UUID nodeId;
 
 	public FlowNode(T content, FlowNode<T> ingestSource, FlowNode<T> egressDestination) {
 		this.content = content;
 		this.ingestSource = ingestSource;
 		this.egressDestination = egressDestination;
+		this.nodeId = UUID.randomUUID();
 		if (content instanceof VideoIngestor) {
 			isIngest = true;
 		}
@@ -79,18 +83,22 @@ public abstract class FlowNode<T> {
 		return isIngest;
 	}
 
-	public void triggerFrame(BufferedImage img) {
+	public void triggerFrame(UUID nodeId, BufferedImage img) {
 		if (!isVideo)
 			return;
 		if (isIngest) {
 			VideoIngestor vi = (VideoIngestor) content;
 			BufferedImage frame = vi.processFrame(null);
-			egressDestination.triggerFrame(frame);
+			egressDestination.triggerFrame(this.nodeId, frame);
 		} else {
 			VideoProcessor vp = (VideoProcessor) content;
+			if (vp instanceof MultiplexedVideoProcessor) {
+				MultiplexedVideoProcessor mvp = (MultiplexedVideoProcessor) vp;
+				mvp.ingestFrame(nodeId, img);
+			}
 			BufferedImage frame = vp.processFrame(img);
 			if (egressDestination != null)
-				egressDestination.triggerFrame(frame);
+				egressDestination.triggerFrame(this.nodeId, frame);
 		}
 	}
 }

@@ -24,10 +24,10 @@ void convert4Channel(uint8_t* input, uint8_t* output, size_t totalSize){
   size_t currIndex = 0;
 
   while(currIndex < totalSize){
-    output[currIndex] = input[currIndex + 2];
-    output[currIndex + 1] = input[currIndex + 1];
-    output[currIndex + 2] = input[currIndex];
-    output[currIndex + 3] = input[currIndex + 3];
+    output[currIndex] = input[currIndex + 3];
+    output[currIndex + 1] = input[currIndex + 2];
+    output[currIndex + 2] = input[currIndex + 1];
+    output[currIndex + 3] = input[currIndex + 0];
     currIndex += 4;
   }
 }

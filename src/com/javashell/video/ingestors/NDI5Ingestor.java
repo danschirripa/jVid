@@ -13,6 +13,7 @@ import com.javashell.video.egressors.NDI5Egressor;
 public class NDI5Ingestor extends VideoIngestor {
 	private String ndiName = "jVid";
 	private final String sourceName;
+	private final BufferedImage curFrame;
 
 	static {
 		try {
@@ -55,26 +56,37 @@ public class NDI5Ingestor extends VideoIngestor {
 		super(resolution);
 		this.sourceName = sourceName;
 		this.ndiName = ndiName;
+		curFrame = new BufferedImage(getResolution().width, getResolution().height, BufferedImage.TYPE_4BYTE_ABGR);
 	}
 
 	@Override
 	public BufferedImage processFrame(BufferedImage frame) {
-		BufferedImage img = new BufferedImage(getResolution().width, getResolution().height,
-				BufferedImage.TYPE_4BYTE_ABGR);
-		byte[] frameBytes = grabFrame();
-		if (frameBytes == null) {
-			System.out.println("NULL");
-			return null;
-		}
-		System.arraycopy(frameBytes, 0, ((DataBufferByte) img.getRaster().getDataBuffer()).getData(), 0,
-				frameBytes.length);
-		return img;
+		return curFrame;
 	}
 
 	@Override
 	public boolean open() {
 		System.out.println("Initializing NDI with " + ndiName + ":" + sourceName);
 		initializeNDI(ndiName, sourceName);
+		Thread ingestRunnable = new Thread(new Runnable() {
+
+			public void run() {
+				while (true) {
+					try {
+						Thread.sleep(10);
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+					byte[] frameBytes = grabFrame();
+					if (frameBytes == null) {
+						continue;
+					}
+					System.arraycopy(frameBytes, 0, ((DataBufferByte) curFrame.getRaster().getDataBuffer()).getData(),
+							0, frameBytes.length);
+				}
+			}
+		});
+		ingestRunnable.start();
 		return true;
 	}
 

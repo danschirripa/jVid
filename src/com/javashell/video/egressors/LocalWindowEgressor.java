@@ -65,7 +65,7 @@ public class LocalWindowEgressor extends VideoEgress {
 			}
 
 		}
-		return null;
+		return frame;
 	}
 
 	@Override

@@ -22,26 +22,19 @@ public class Amcrest_to_QOI_and_NDI5_and_local_Eggressor {
 
 		AmcrestCameraInterface amc = new AmcrestCameraInterface(new Dimension(1920, 1080), "admin", "Enohpoxas98*",
 				"10.42.0.143", 4096000, IP2M_841);
-		// OpenCVAutoTrackerDigestor auto = new OpenCVAutoTrackerDigestor(new
-		// Dimension(1920, 1080), IP2M_841);
 
 		NDI5Egressor ndi5 = new NDI5Egressor(new Dimension(1920, 1080));
 		QOIStreamEgressorC qoi = new QOIStreamEgressorC(new Dimension(1920, 1080));
 		LocalWindowEgressor egress = new LocalWindowEgressor(new Dimension(1920, 1080), false);
 
 		FlowNode<VideoProcessor> ingressNode = new VideoFlowNode(amc, null, null);
-		// FlowNode<VideoProcessor> autoNode = new VideoFlowNode(auto, ingressNode,
-		// null);
-		FlowNode<VideoProcessor> qoiNode = new VideoFlowNode(qoi, ingressNode, null); 
+		FlowNode<VideoProcessor> qoiNode = new VideoFlowNode(qoi, ingressNode, null);
 		FlowNode<VideoProcessor> ndiNode = new VideoFlowNode(ndi5, qoiNode, null);
 		FlowNode<VideoProcessor> egressNode = new VideoFlowNode(egress, ndiNode, null);
 
 		ingressNode.setEgressDestinationNode(qoiNode);
 		qoiNode.setEgressDestinationNode(ndiNode);
 		ndiNode.setEgressDestinationNode(egressNode);
-		// autoNode.setEgressDestinationNode(egressNode);
-
-		// auto.addSubscriber(amc);
 
 		FlowController.registerFlowNode(ingressNode);
 
@@ -49,9 +42,7 @@ public class Amcrest_to_QOI_and_NDI5_and_local_Eggressor {
 		qoi.open();
 		ndi5.open();
 		egress.open();
-		// auto.open();
 
 		FlowController.startFlowControl();
-
 	}
 }
