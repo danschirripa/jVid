@@ -34,6 +34,7 @@ public class MultiviewDigestor extends MultiplexedVideoProcessor {
 			int xoffset = viewportResolution.width * posx;
 			int yoffset = viewportResolution.height * posy;
 			UUID u = idIndices[i];
+
 			if (u == null) {
 				posx++;
 				if (posx == cols) {

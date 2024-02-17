@@ -18,7 +18,6 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
-import org.apache.http.util.EntityUtils;
 import org.bytedeco.ffmpeg.global.avutil;
 import org.bytedeco.javacv.FFmpegFrameGrabber;
 import org.bytedeco.javacv.Frame;
@@ -28,6 +27,7 @@ import com.javashell.video.ControlInterface;
 import com.javashell.video.VideoIngestor;
 import com.javashell.video.camera.Camera;
 import com.javashell.video.camera.PTZControlInterface;
+import com.javashell.video.camera.PTZMove;
 
 public class AmcrestCameraInterface extends VideoIngestor implements PTZControlInterface {
 	private String host;
@@ -101,7 +101,12 @@ public class AmcrestCameraInterface extends VideoIngestor implements PTZControlI
 
 	}
 
+	private boolean isMoving = false;
+
 	private void relativePTZ(int pan, int tilt, int zoom) throws Exception {
+		if (isMoving)
+			return;
+		isMoving = true;
 		Map<String, String> params = new HashMap<String, String>();
 		String url = "http://" + host + "/cgi-bin/ptz.cgi?action=moveRelatively";
 		params.put("channel", "1");
@@ -110,9 +115,9 @@ public class AmcrestCameraInterface extends VideoIngestor implements PTZControlI
 		} else {
 			String tiltValue = "" + ((double) tilt) / getResolution().height + "";
 			String panValue = "" + ((double) pan) / getResolution().width + "";
-			String zoomValue = "" + ((zoom == 0) ? 0 : 0.01) + "";
+			String zoomValue = "" + ((zoom == 0) ? 0 : 0.02) + "";
 			if (zoom < 0) {
-				zoomValue = "-0.01";
+				zoomValue = "-0.02";
 			}
 			System.out.println(tiltValue + " - " + panValue);
 
@@ -128,9 +133,10 @@ public class AmcrestCameraInterface extends VideoIngestor implements PTZControlI
 		System.out.println(resp.getStatusLine().getStatusCode() + " - " + url);
 		System.out.println();
 		get.releaseConnection();
+		isMoving = false;
 	}
 
-	private void indirrectPTZ(int pan, int tilt, int zoom) throws Exception {
+	private void indirectPTZ(int pan, int tilt, int zoom) throws Exception {
 		Map<String, String> params = new HashMap<String, String>();
 		String url = "http://" + host + "/cgi-bin/ptz.cgi?action=start&code=";
 		params.put("channel", "1");

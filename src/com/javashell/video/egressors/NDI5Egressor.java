@@ -14,6 +14,9 @@ import com.javashell.video.VideoEgress;
 public class NDI5Egressor extends VideoEgress {
 	private final String ndiName;
 	private static final long frameRateInterval = (long) 16.3 * 1000000;
+	private Thread egressThread;
+	private BufferedImage curFrame;
+	private String lock1 = "";
 
 	static {
 		try {
@@ -59,15 +62,9 @@ public class NDI5Egressor extends VideoEgress {
 
 	@Override
 	public BufferedImage processFrame(BufferedImage frame) {
-		if (frame == null) {
-			return null;
-		}
-		final int channels = (frame.getAlphaRaster() != null) ? 4 : 3;
-		final DataBuffer currentBuf = frame.getRaster().getDataBuffer();
-		if (currentBuf instanceof DataBufferByte) {
-			sendFrameB(((DataBufferByte) currentBuf).getData(), channels);
-		} else {
-			sendFrameI(((DataBufferInt) currentBuf).getData(), channels);
+		curFrame = frame;
+		synchronized (lock1) {
+			lock1.notify();
 		}
 		return frame;
 	}
@@ -75,6 +72,27 @@ public class NDI5Egressor extends VideoEgress {
 	@Override
 	public boolean open() {
 		initializeNDI(getResolution().width, getResolution().height, ndiName);
+		egressThread = new Thread(new Runnable() {
+			public void run() {
+				while (true) {
+					try {
+						synchronized (lock1) {
+							lock1.wait();
+						}
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+					final int channels = (curFrame.getAlphaRaster() != null) ? 4 : 3;
+					final DataBuffer currentBuf = curFrame.getRaster().getDataBuffer();
+					if (currentBuf instanceof DataBufferByte) {
+						sendFrameB(((DataBufferByte) currentBuf).getData(), channels);
+					} else {
+						sendFrameI(((DataBufferInt) currentBuf).getData(), channels);
+					}
+				}
+			}
+		});
+		egressThread.start();
 		return false;
 	}
 

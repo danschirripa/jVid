@@ -21,6 +21,7 @@ public class OpenCVIngestor extends VideoIngestor {
 	private boolean isOpen = true;
 	private static BufferedImage curFrame, bufFrame;
 	private static VideoCapture cap;
+	private int device;
 	private long lastFPS = 0;
 
 	static {
@@ -61,6 +62,8 @@ public class OpenCVIngestor extends VideoIngestor {
 
 		generateNullFrame();
 
+		this.device = device;
+
 		curFrame = nullFrame;
 
 		captureThread = new Thread(new Runnable() {
@@ -97,7 +100,7 @@ public class OpenCVIngestor extends VideoIngestor {
 	public boolean open() {
 		try {
 			cap = new VideoCapture();
-			cap.open(0);
+			cap.open(device);
 			isOpen = true;
 			cap.set(Videoio.CAP_PROP_FRAME_WIDTH, this.getResolution().getWidth());
 			cap.set(Videoio.CAP_PROP_FRAME_HEIGHT, this.getResolution().getHeight());

@@ -26,6 +26,7 @@ import org.opencv.objdetect.Objdetect;
 import com.javashell.video.ControlInterface;
 import com.javashell.video.VideoDigestor;
 import com.javashell.video.camera.Camera;
+import com.javashell.video.camera.FaceSet;
 import com.javashell.video.camera.PTZControlInterface;
 import com.javashell.video.camera.PTZMove;
 
@@ -41,7 +42,6 @@ public class OpenCVAutoTrackerDigestor extends VideoDigestor implements ControlI
 	private Rect faceRect;
 	private boolean doTrack = false;
 	private Camera cam;
-	private HashSet<ControlInterface> interfaces;
 	private static final Size minFaceSize = new Size(1080 * 0.15f, 1080 * 0.15f), maxFaceSize = new Size();
 	private double desiredFaceToFramePercentage = 20;
 	private final double totalArea;
@@ -76,7 +76,6 @@ public class OpenCVAutoTrackerDigestor extends VideoDigestor implements ControlI
 			System.exit(-1);
 		}
 		controllers = new HashSet<>();
-		interfaces = new HashSet<>();
 		totalArea = resolution.getWidth() * resolution.getHeight();
 	}
 
@@ -108,6 +107,10 @@ public class OpenCVAutoTrackerDigestor extends VideoDigestor implements ControlI
 				break;
 			}
 		}
+		FaceSet faceSet = new FaceSet(facesArray, face);
+		for (ControlInterface cf : controllers) {
+			cf.processControl(faceSet);
+		}
 		if (!(centerPoint == null)) {
 			if (lastCenterPoint == null) {
 				lastCenterPoint = centerPoint;
@@ -125,10 +128,10 @@ public class OpenCVAutoTrackerDigestor extends VideoDigestor implements ControlI
 
 			double difference = desiredFaceToFramePercentage - faceFramePercentage;
 
-			if (Math.abs(difference) > 10) {
-				if (difference > 0) {
+			if (Math.abs(difference) > 15) {
+				if (difference > 15) {
 					zoom = 1;
-				} else {
+				} else if (difference < -12) {
 					zoom = -1;
 				}
 			}
@@ -166,14 +169,13 @@ public class OpenCVAutoTrackerDigestor extends VideoDigestor implements ControlI
 
 	@Override
 	public BufferedImage processFrame(BufferedImage frame) {
-		if (lastCenterPoint != null) {
-			Color old = frame.getGraphics().getColor();
-			Graphics frameg = frame.getGraphics();
-			frameg.setColor(Color.red);
-			frameg.fillOval(lastCenterPoint.x, lastCenterPoint.y, 10, 10);
-			frameg.drawRect(faceRect.x, faceRect.y, faceRect.width, faceRect.height);
-			// frame.getGraphics().setColor(old);
-		}
+		/**
+		 * if (lastCenterPoint != null) { Color old = frame.getGraphics().getColor();
+		 * Graphics frameg = frame.getGraphics(); frameg.setColor(Color.red);
+		 * frameg.fillOval(lastCenterPoint.x, lastCenterPoint.y, 10, 10);
+		 * frameg.drawRect(faceRect.x, faceRect.y, faceRect.width, faceRect.height); //
+		 * frame.getGraphics().setColor(old); }
+		 **/
 		if (frame == null || !doTrack)
 			return frame;
 		if (digestionOffsetIndex == digestionOffset) {
