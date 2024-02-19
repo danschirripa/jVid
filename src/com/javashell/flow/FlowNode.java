@@ -101,4 +101,8 @@ public abstract class FlowNode<T> {
 				egressDestination.triggerFrame(this.nodeId, frame);
 		}
 	}
+
+	public UUID getUUID() {
+		return this.nodeId;
+	}
 }

@@ -1,4 +1,4 @@
-package com.javashell.video.egressors;
+package NDI5Encoder_Native;
 
 import java.awt.Dimension;
 import java.awt.image.BufferedImage;
@@ -17,7 +17,6 @@ public class NDI5Egressor extends VideoEgress {
 	private Thread egressThread;
 	private BufferedImage curFrame;
 	private String lock1 = "";
-	private long ndiPtr;
 
 	static {
 		try {
@@ -60,9 +59,9 @@ public class NDI5Egressor extends VideoEgress {
 	public NDI5Egressor(Dimension resolution) {
 		this(resolution, "jVid");
 	}
-
+	
 	private void loadLibNDIEncoder() {
-
+		
 	}
 
 	@Override
@@ -76,7 +75,7 @@ public class NDI5Egressor extends VideoEgress {
 
 	@Override
 	public boolean open() {
-		ndiPtr = initializeNDI(getResolution().width, getResolution().height, ndiName);
+		initializeNDI(getResolution().width, getResolution().height, ndiName);
 		egressThread = new Thread(new Runnable() {
 			public void run() {
 				while (true) {
@@ -84,17 +83,15 @@ public class NDI5Egressor extends VideoEgress {
 						synchronized (lock1) {
 							lock1.wait();
 						}
-						if (curFrame == null)
-							continue;
 					} catch (Exception e) {
 						e.printStackTrace();
 					}
 					final int channels = (curFrame.getAlphaRaster() != null) ? 4 : 3;
 					final DataBuffer currentBuf = curFrame.getRaster().getDataBuffer();
 					if (currentBuf instanceof DataBufferByte) {
-						sendFrameB(ndiPtr, ((DataBufferByte) currentBuf).getData(), channels);
+						sendFrameB(((DataBufferByte) currentBuf).getData(), channels);
 					} else {
-						sendFrameI(ndiPtr, ((DataBufferInt) currentBuf).getData(), channels);
+						sendFrameI(((DataBufferInt) currentBuf).getData(), channels);
 					}
 				}
 			}
@@ -108,10 +105,10 @@ public class NDI5Egressor extends VideoEgress {
 		return false;
 	}
 
-	private native long initializeNDI(int width, int height, String name);
+	private native void initializeNDI(int width, int height, String name);
 
-	private native void sendFrameB(long ndiPtr, byte[] frame, int channels);
+	private native void sendFrameB(byte[] frame, int channels);
 
-	private native void sendFrameI(long ndiPtr, int[] frame, int channels);
+	private native void sendFrameI(int[] frame, int channels);
 
 }

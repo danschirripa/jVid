@@ -14,7 +14,7 @@ extern "C" {
  * Method:    initializeNDI
  * Signature: (IILjava/lang/String;)V
  */
-JNIEXPORT void JNICALL Java_com_javashell_video_egressors_NDI5Egressor_initializeNDI
+JNIEXPORT jlong JNICALL Java_com_javashell_video_egressors_NDI5Egressor_initializeNDI
   (JNIEnv *, jobject, jint, jint, jstring);
 
 /*
@@ -23,7 +23,7 @@ JNIEXPORT void JNICALL Java_com_javashell_video_egressors_NDI5Egressor_initializ
  * Signature: ([BI)V
  */
 JNIEXPORT void JNICALL Java_com_javashell_video_egressors_NDI5Egressor_sendFrameB
-  (JNIEnv *, jobject, jbyteArray, jint);
+  (JNIEnv *, jobject, jlong, jbyteArray, jint);
 
 /*
  * Class:     com_javashell_video_egressors_NDI5Egressor
@@ -31,7 +31,7 @@ JNIEXPORT void JNICALL Java_com_javashell_video_egressors_NDI5Egressor_sendFrame
  * Signature: ([II)V
  */
 JNIEXPORT void JNICALL Java_com_javashell_video_egressors_NDI5Egressor_sendFrameI
-  (JNIEnv *, jobject, jintArray, jint);
+  (JNIEnv *, jobject, jlong, jintArray, jint);
 
 #ifdef __cplusplus
 }

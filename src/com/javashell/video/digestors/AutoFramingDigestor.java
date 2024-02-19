@@ -61,17 +61,17 @@ public class AutoFramingDigestor extends VideoDigestor implements ControlInterfa
 			minx = 0;
 		} else
 			minx = minx - xpadding;
-		
+
 		if (miny - ypadding < 0) {
 			miny = 0;
 		} else
 			miny = miny - ypadding;
-		
+
 		if (maxx + xpadding > getResolution().width) {
 			maxx = getResolution().width;
 		} else
 			maxx = maxx + xpadding;
-		
+
 		if (maxy + ypadding > getResolution().height) {
 			maxy = getResolution().height;
 		} else
@@ -84,7 +84,7 @@ public class AutoFramingDigestor extends VideoDigestor implements ControlInterfa
 
 		scale = ((float) getResolution().width * (float) height) / ((float) getResolution().height * (float) width);
 
-		int newWidth = (int) Math.round(width * scale);
+		int newWidth = (int) (width * scale);
 		int widthDelta = newWidth - width;
 		width = newWidth;
 
@@ -120,10 +120,18 @@ public class AutoFramingDigestor extends VideoDigestor implements ControlInterfa
 				y = overallRect.y - transitionalStepSizeY;
 				width = overallRect.width + transitionalStepSizeW;
 				height = overallRect.height + transitionalStepSizeH;
+
+				if (x + width > getResolution().width) {
+					int widthDelta = getResolution().width - width;
+					width = width - widthDelta;
+					x = x - widthDelta;
+				}
+
 				overallRect.x = x;
 				overallRect.y = y;
 				overallRect.width = width;
 				overallRect.height = height;
+
 				nTransitionalFrame++;
 				if (nTransitionalFrame == transitionalFrames) {
 					isTransitioning = false;

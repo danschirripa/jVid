@@ -35,11 +35,11 @@ public class OpenCVDeepLearningFaceDetectorDigestor extends VideoDigestor implem
 	private HashSet<ControlInterface> controllers;
 	private Point lastCenterPoint;
 	private boolean doTrack = false;
-	private static Net net = null;
+	private final Net net;
+	private static String protoFile, caffeFile;
 
 	static {
 		System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
-		String protoFile = "", caffeFile = "";
 
 		try {
 			InputStream in = OpenCVDeepLearningAutoTrackerDigestor.class.getResourceAsStream("/caffe/deploy.prototxt");
@@ -64,8 +64,6 @@ public class OpenCVDeepLearningFaceDetectorDigestor extends VideoDigestor implem
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-
-		net = readNetFromCaffe(protoFile, caffeFile);
 	}
 
 	private Runnable autoTrackRunnable = new Runnable() {
@@ -76,6 +74,7 @@ public class OpenCVDeepLearningFaceDetectorDigestor extends VideoDigestor implem
 
 	public OpenCVDeepLearningFaceDetectorDigestor(Dimension resolution) {
 		super(resolution);
+		net = readNetFromCaffe(protoFile, caffeFile);
 		distanceRange = resolution.width / 2.5;
 		controllers = new HashSet<>();
 	}

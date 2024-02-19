@@ -15,6 +15,8 @@ public class MultiplexedVideoFlowNode extends VideoFlowNode {
 
 	@Override
 	public void setIngestSourceNode(FlowNode<VideoProcessor> source) {
+		if (source == null)
+			return;
 		ingestSources.add(source);
 		source.setEgressDestinationNode(this);
 	}
