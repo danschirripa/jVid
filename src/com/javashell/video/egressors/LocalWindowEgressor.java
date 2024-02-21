@@ -63,7 +63,6 @@ public class LocalWindowEgressor extends VideoEgress {
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
-
 		}
 		return frame;
 	}

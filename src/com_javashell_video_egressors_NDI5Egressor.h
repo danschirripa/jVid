@@ -12,34 +12,26 @@ extern "C" {
 /*
  * Class:     com_javashell_video_egressors_NDI5Egressor
  * Method:    initializeNDI
- * Signature: (Ljava/lang/String;)J
+ * Signature: (IILjava/lang/String;)J
  */
 JNIEXPORT jlong JNICALL Java_com_javashell_video_egressors_NDI5Egressor_initializeNDI
-  (JNIEnv *, jobject, jstring);
-
-/*
- * Class:     com_javashell_video_egressors_NDI5Egressor
- * Method:    initializeNDIFrame
- * Signature: (II)J
- */
-JNIEXPORT jlong JNICALL Java_com_javashell_video_egressors_NDI5Egressor_initializeNDIFrame
-  (JNIEnv *, jobject, jint, jint);
+  (JNIEnv *, jobject, jint, jint, jstring);
 
 /*
  * Class:     com_javashell_video_egressors_NDI5Egressor
  * Method:    sendFrameB
- * Signature: (JJ[BI)V
+ * Signature: (J[BI)V
  */
 JNIEXPORT void JNICALL Java_com_javashell_video_egressors_NDI5Egressor_sendFrameB
-  (JNIEnv *, jobject, jlong, jlong, jbyteArray, jint);
+  (JNIEnv *, jobject, jlong, jbyteArray, jint);
 
 /*
  * Class:     com_javashell_video_egressors_NDI5Egressor
  * Method:    sendFrameI
- * Signature: (JJ[II)V
+ * Signature: (J[II)V
  */
 JNIEXPORT void JNICALL Java_com_javashell_video_egressors_NDI5Egressor_sendFrameI
-  (JNIEnv *, jobject, jlong, jlong, jintArray, jint);
+  (JNIEnv *, jobject, jlong, jintArray, jint);
 
 #ifdef __cplusplus
 }

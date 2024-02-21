@@ -36,7 +36,7 @@ public class DualCamera_to_NDI5Egressor {
 				4096000, IP2M_841);
 		OpenCVIngestor camIn = new OpenCVIngestor(new Dimension(720, 576), 0);
 
-		// DIGEST DEFINITIONf
+		// DIGEST DEFINITION
 		Camera EVI_D70 = Camera.getCamera("Sony EVI D-70");
 		OpenCVDeepLearningFaceDetectorDigestor amcAuto = new OpenCVDeepLearningFaceDetectorDigestor(
 				new Dimension(1920, 1080));
@@ -95,7 +95,6 @@ public class DualCamera_to_NDI5Egressor {
 		amcAuto.addSubscriber(autoFrame);
 
 		sonyAuto.addSubscriber(atd);
-		// sonyAuto.addSubscriber(facePaint);
 		atd.addSubscriber(visca);
 		visca.addSubscriber(serial);
 
