@@ -17,13 +17,11 @@ public class FFMPEG_to_NDI5Egressor {
 		String ndiName = "jVid";
 
 		int width = 1920, height = 1080;
-		if (args.length == 3) {
+		if (args.length > 1) {
 			width = Integer.parseInt(args[1]);
 			height = Integer.parseInt(args[2]);
 		}
-		if (args.length == 4) {
-			ndiName = args[3];
-		}
+
 		Dimension resolution = new Dimension(width, height);
 		FFMPEGIngestor ingest = new FFMPEGIngestor(resolution, streamDevice);
 		NDI5Egressor egress = new NDI5Egressor(resolution, ndiName);

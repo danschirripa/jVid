@@ -60,7 +60,8 @@ JNIEXPORT jlong JNICALL Java_com_javashell_video_egressors_LibVPXStreamEgressor_
  */
 JNIEXPORT void JNICALL Java_com_javashell_video_egressors_LibVPXStreamEgressor_sendFrameB
   (JNIEnv *env, jobject obj, jlong ptr, jbyteArray rawImage, jint channels){
-
+    uint8_t* data = (uint8_t*) env->GetByteArrayElements(img_data, NULL);
+    struct VPXStruct *instance = (struct VPXStruct*) ptr;
   }
 
 /*
@@ -70,5 +71,6 @@ JNIEXPORT void JNICALL Java_com_javashell_video_egressors_LibVPXStreamEgressor_s
  */
 JNIEXPORT void JNICALL Java_com_javashell_video_egressors_LibVPXStreamEgressor_sendFrameI
   (JNIEnv *env, jobject obj, jlong ptr, jintArray rawImage, jint channels){
-
+    uint8_t* data = (uint8_t*) env->GetIntArrayElements(img_data, NULL);
+    struct VPXStruct *instance = (struct VPXStruct*) ptr;
   }

@@ -31,19 +31,18 @@ public class NDI5Egressor extends VideoEgress {
 
 			InputStream libNDIEncoderStream = NDI5Egressor.class.getResourceAsStream("/" + prefix + "/libndi.so");
 			File libNDIEncoderFile = File.createTempFile("libndi", ".so");
-			FileOutputStream libNDIEncoderOutputStream = new FileOutputStream(libNDIEncoderFile);
-			libNDIEncoderOutputStream.write(libNDIEncoderStream.readAllBytes());
-			libNDIEncoderOutputStream.flush();
-			libNDIEncoderOutputStream.close();
+			try (FileOutputStream libNDIEncoderOutputStream = new FileOutputStream(libNDIEncoderFile)) {
+				libNDIEncoderOutputStream.write(libNDIEncoderStream.readAllBytes());
+			}
+
 			libNDIEncoderStream.close();
 			System.load(libNDIEncoderFile.getAbsolutePath());
 
 			libNDIEncoderStream = NDI5Egressor.class.getResourceAsStream("/" + prefix + "/libNDIEncoder.so");
 			libNDIEncoderFile = File.createTempFile("libNDIEncoder", ".so");
-			libNDIEncoderOutputStream = new FileOutputStream(libNDIEncoderFile);
-			libNDIEncoderOutputStream.write(libNDIEncoderStream.readAllBytes());
-			libNDIEncoderOutputStream.flush();
-			libNDIEncoderOutputStream.close();
+			try (FileOutputStream libNDIEncoderOutputStream = new FileOutputStream(libNDIEncoderFile)) {
+				libNDIEncoderOutputStream.write(libNDIEncoderStream.readAllBytes());
+			}
 			libNDIEncoderStream.close();
 			System.load(libNDIEncoderFile.getAbsolutePath());
 		} catch (Exception e) {

@@ -113,7 +113,7 @@ public class AutoFramingDigestor extends VideoDigestor implements ControlInterfa
 
 	@Override
 	public BufferedImage processFrame(BufferedImage frame) {
-		if (overallRect != null) {
+		if (overallRect != null && frame != null) {
 			if (isTransitioning) {
 				int x, y, width, height;
 				x = overallRect.x - transitionalStepSizeX;
@@ -121,10 +121,11 @@ public class AutoFramingDigestor extends VideoDigestor implements ControlInterfa
 				width = overallRect.width + transitionalStepSizeW;
 				height = overallRect.height + transitionalStepSizeH;
 
-				if (x + width > getResolution().width) {
+				if ((overallRect.x + overallRect.width) > getResolution().width) {
 					int widthDelta = getResolution().width - width;
 					width = width - widthDelta;
 					x = x - widthDelta;
+					System.out.println("UPDATING WIDTH BECAUSE OUT OF RASTER: " + widthDelta);
 				}
 
 				overallRect.x = x;
@@ -146,7 +147,8 @@ public class AutoFramingDigestor extends VideoDigestor implements ControlInterfa
 				g.drawImage(frame.getSubimage(overallRect.x, overallRect.y, overallRect.width, overallRect.height), 0,
 						0, getResolution().width, getResolution().height, null);
 			} catch (Exception e) {
-				System.out.println(e.getMessage());
+				System.out.println(e.getMessage() + ": " + (overallRect.x + overallRect.width) + " " + frame.getWidth()
+						+ "x" + frame.getHeight());
 			}
 			frame = null;
 			return crop;

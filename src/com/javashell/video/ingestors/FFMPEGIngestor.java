@@ -21,7 +21,7 @@ public class FFMPEGIngestor extends VideoIngestor {
 	private BufferedImage nullFrame;
 	private Thread captureThread;
 	private boolean isOpen = false;
-	private static BufferedImage curFrame, bufFrame;
+	private BufferedImage curFrame, bufFrame;
 	private long lastFPS;
 	private int frameDelay = 16;
 	private final String lock = "";
@@ -47,6 +47,13 @@ public class FFMPEGIngestor extends VideoIngestor {
 	public FFMPEGIngestor(Dimension resolution, File videoInput) {
 		super(resolution);
 		grabber = new FFmpegFrameGrabber(videoInput);
+		init();
+	}
+
+	public FFMPEGIngestor(Dimension resolution, File videoInput, String format) {
+		super(resolution);
+		grabber = new FFmpegFrameGrabber(videoInput);
+		grabber.setFormat(format);
 		init();
 	}
 
