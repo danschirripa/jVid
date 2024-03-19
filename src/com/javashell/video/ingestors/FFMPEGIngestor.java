@@ -16,7 +16,7 @@ import org.opencv.core.Mat;
 import com.javashell.video.VideoIngestor;
 
 public class FFMPEGIngestor extends VideoIngestor {
-	private FFmpegFrameGrabber grabber;
+	private final FFmpegFrameGrabber grabber;
 	private Java2DFrameConverter conv;
 	private BufferedImage nullFrame;
 	private Thread captureThread;
@@ -24,16 +24,18 @@ public class FFMPEGIngestor extends VideoIngestor {
 	private BufferedImage curFrame, bufFrame;
 	private long lastFPS;
 	private int frameDelay = 16;
+	private double frameRate = -1;
 	private final String lock = "";
 
 	static {
 		avutil.av_log_set_level(avutil.AV_LOG_QUIET);
+		// FFmpegLogCallback.set();
 	}
 
 	public FFMPEGIngestor(Dimension resolution, InputStream videoInput, String format) {
 		super(resolution);
-		FFmpegLogCallback.set();
 		grabber = new FFmpegFrameGrabber(videoInput, 0);
+		grabber.setVideoCodecName(format);
 		grabber.setFormat(format);
 		init();
 	}
@@ -53,6 +55,7 @@ public class FFMPEGIngestor extends VideoIngestor {
 	public FFMPEGIngestor(Dimension resolution, File videoInput, String format) {
 		super(resolution);
 		grabber = new FFmpegFrameGrabber(videoInput);
+		grabber.setVideoCodecName(format);
 		grabber.setFormat(format);
 		init();
 	}
@@ -60,8 +63,30 @@ public class FFMPEGIngestor extends VideoIngestor {
 	public FFMPEGIngestor(Dimension resolution, String input, String format) {
 		super(resolution);
 		grabber = new FFmpegFrameGrabber(input);
+		grabber.setVideoCodecName(format);
 		grabber.setFormat(format);
 		init();
+	}
+
+	public void setVideoCodec(String codec) {
+		grabber.setVideoCodecName(codec);
+	}
+
+	public void setVideoFormat(String format) {
+		grabber.setFormat(format);
+	}
+
+	public void setFrameRate(double rate) {
+		if (rate > 0)
+			this.frameRate = rate;
+	}
+
+	public void setVideoOption(String key, String value) {
+		grabber.setVideoOption(key, value);
+	}
+
+	public void setOption(String key, String value) {
+		grabber.setOption(key, value);
 	}
 
 	private void init() {
@@ -74,10 +99,10 @@ public class FFMPEGIngestor extends VideoIngestor {
 							lock.wait();
 						}
 						long startTime = System.nanoTime();
-						javacvFrame = grabber.grab();
+						javacvFrame = grabber.grabImage();
 						while (javacvFrame.image == null) {
 							javacvFrame.close();
-							javacvFrame = grabber.grab();
+							javacvFrame = grabber.grabImage();
 						}
 						bufFrame = conv.convert(javacvFrame);
 						long endTime = System.nanoTime();
@@ -108,9 +133,13 @@ public class FFMPEGIngestor extends VideoIngestor {
 			grabber.setImageWidth(getResolution().width);
 			grabber.setImageHeight(getResolution().height);
 			grabber.setNumBuffers(0);
+			if (frameRate != -1)
+				grabber.setFrameRate(frameRate);
 			grabber.start();
 			frameDelay = (int) (1 / grabber.getFrameRate() * 1000);
 			System.out.println(grabber.getFrameRate());
+			System.out.println(grabber.getImageWidth() + "x" + grabber.getImageHeight());
+			System.out.println(grabber.getVideoCodecName());
 			isOpen = true;
 			captureThread.start();
 		} catch (Exception e) {
