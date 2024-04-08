@@ -1,4 +1,4 @@
-package com.javashell.video.egressors.cl;
+package com.javashell.video.egressors;
 
 import java.awt.Dimension;
 import java.awt.image.BufferedImage;
@@ -17,11 +17,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import org.bytedeco.javacv.Frame;
-
 import com.javashell.video.VideoEgress;
 
-public class QOIStreamEgressorC extends VideoEgress {
+public class QOYStreamEgressor extends VideoEgress {
 	private ServerSocket server;
 	private static HashSet<Socket> clients;
 	private static byte[][] encodedBuffer0;
@@ -42,22 +40,22 @@ public class QOIStreamEgressorC extends VideoEgress {
 			if (arch.equals("aarch64")) {
 				prefix = "aarch64";
 			}
-			InputStream libQOIEncoderStream = QOIStreamEgressorC.class
-					.getResourceAsStream("/" + prefix + "/libQOIEncoder.so");
-			File libQOIEncoderFile = File.createTempFile("libQOIEncoder", ".so");
-			FileOutputStream libQOIEncoderOutputStream = new FileOutputStream(libQOIEncoderFile);
-			libQOIEncoderOutputStream.write(libQOIEncoderStream.readAllBytes());
-			libQOIEncoderOutputStream.flush();
-			libQOIEncoderOutputStream.close();
-			libQOIEncoderStream.close();
-			System.load(libQOIEncoderFile.getAbsolutePath());
+			InputStream libQOYEncoderStream = QOYStreamEgressor.class
+					.getResourceAsStream("/" + prefix + "/libQOYEncoder.so");
+			File libQOYEncoderFile = File.createTempFile("libQOYEncoder", ".so");
+			FileOutputStream libQOYEncoderOutputStream = new FileOutputStream(libQOYEncoderFile);
+			libQOYEncoderOutputStream.write(libQOYEncoderStream.readAllBytes());
+			libQOYEncoderOutputStream.flush();
+			libQOYEncoderOutputStream.close();
+			libQOYEncoderStream.close();
+			System.load(libQOYEncoderFile.getAbsolutePath());
 		} catch (Exception e) {
 			e.printStackTrace();
 			System.exit(-1);
 		}
 	}
 
-	public QOIStreamEgressorC(Dimension resolution) {
+	public QOYStreamEgressor(Dimension resolution) {
 		super(resolution);
 	}
 
@@ -94,11 +92,11 @@ public class QOIStreamEgressorC extends VideoEgress {
 					}
 				}
 			});
-			serverThread.setName("QOI_Server");
+			serverThread.setName("QOY_Server");
 			encoderThread1 = new Thread(new EncoderThread1());
-			encoderThread1.setName("QOI_Enc1");
+			encoderThread1.setName("QOY_Enc1");
 			egressThread = new Thread(new EgressRunnable());
-			egressThread.setName("QOI_Egress");
+			egressThread.setName("QOY_Egress");
 			encoderThread1.start();
 			serverThread.start();
 			egressThread.start();
@@ -179,24 +177,6 @@ public class QOIStreamEgressorC extends VideoEgress {
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
-		return encoded;
-	}
-
-	public byte[] convertFromFrame(Frame curImg, Frame preImg, boolean isKey, int subSegments) {
-		final int width = curImg.imageWidth;
-		final int yDelta = curImg.imageHeight;
-
-		final int channels = curImg.imageChannels;
-
-		if (preImg == null)
-			preImg = new Frame(width, yDelta, curImg.imageDepth, channels);
-
-		final ByteBuffer currentBuf = (ByteBuffer) curImg.image[0];
-		final ByteBuffer previousBuf = (ByteBuffer) preImg.image[0];
-
-		byte[] encoded;
-
-		encoded = encodeB(currentBuf.array(), previousBuf.array(), width, yDelta, channels, 0, isKey);
 		return encoded;
 	}
 

@@ -24,7 +24,7 @@ public class Amcrest_to_local_Eggressor {
 
 		Dimension resolution = new Dimension(1920, 1080);
 
-		AmcrestCameraInterface amc = new AmcrestCameraInterface(resolution, "admin", "Enohpoxas98*", "10.42.0.144",
+		AmcrestCameraInterface amc = new AmcrestCameraInterface(resolution, "admin", "Enohpoxas98*", "10.42.0.143",
 				4096000, IP2M_841);
 		// OpenCVAutoTrackerDigestor auto = new OpenCVAutoTrackerDigestor(new
 		// Dimension(1920, 1080), IP2M_841);

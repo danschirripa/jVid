@@ -27,7 +27,7 @@ import java.util.concurrent.TimeUnit;
 
 import com.javashell.video.VideoIngestor;
 
-public class QOIStreamIngestorC extends VideoIngestor {
+public class QOYStreamIngestor extends VideoIngestor {
 	private String ip;
 	private int port;
 	private Socket sock;
@@ -50,30 +50,30 @@ public class QOIStreamIngestorC extends VideoIngestor {
 			if (arch.equals("aarch64")) {
 				prefix = "aarch64";
 			}
-			InputStream libQOIDecoderStream = QOIStreamIngestorC.class
-					.getResourceAsStream("/" + prefix + "/libQOIDecoder.so");
-			File libQOIDecoderFile = File.createTempFile("libQOIDecoder", ".so");
-			FileOutputStream libQOIDecoderOutputStream = new FileOutputStream(libQOIDecoderFile);
-			libQOIDecoderOutputStream.write(libQOIDecoderStream.readAllBytes());
-			libQOIDecoderOutputStream.flush();
-			libQOIDecoderOutputStream.close();
-			libQOIDecoderStream.close();
-			System.load(libQOIDecoderFile.getAbsolutePath());
+			InputStream libQOYDecoderStream = QOYStreamIngestor.class
+					.getResourceAsStream("/" + prefix + "/libQOYDecoder.so");
+			File libQOYDecoderFile = File.createTempFile("libQOYDecoder", ".so");
+			FileOutputStream libQOYDecoderOutputStream = new FileOutputStream(libQOYDecoderFile);
+			libQOYDecoderOutputStream.write(libQOYDecoderStream.readAllBytes());
+			libQOYDecoderOutputStream.flush();
+			libQOYDecoderOutputStream.close();
+			libQOYDecoderStream.close();
+			System.load(libQOYDecoderFile.getAbsolutePath());
 		} catch (Exception e) {
 			e.printStackTrace();
 			System.exit(-1);
 		}
 	}
 
-	public QOIStreamIngestorC(Dimension resolution, String ip, int port, boolean isMulticast) {
+	public QOYStreamIngestor(Dimension resolution, String ip, int port, boolean isMulticast) {
 		this(resolution, ip, port, isMulticast, 2);
 	}
 
-	public QOIStreamIngestorC() {
+	public QOYStreamIngestor() {
 		super(new Dimension(1920, 1080));
 	}
 
-	public QOIStreamIngestorC(Dimension resolution, String ip, int port, boolean isMulticast, int numThreads) {
+	public QOYStreamIngestor(Dimension resolution, String ip, int port, boolean isMulticast, int numThreads) {
 		super(resolution);
 		this.ip = ip;
 		this.port = port;

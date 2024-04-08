@@ -1,0 +1,2 @@
+g++ -c -fPIC ./com_javashell_video_egressors_cl_QOIStreamEgressorC.c -o QOIEncoder.o -I"/home/dan/jdk-20.0.2+9/include/" -I"/home/dan/jdk-20.0.2+9/include/linux/"
+g++ -shared -o libQOIEncoder.so QOIEncoder.o 
