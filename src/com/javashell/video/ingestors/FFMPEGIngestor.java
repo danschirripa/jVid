@@ -67,6 +67,12 @@ public class FFMPEGIngestor extends VideoIngestor {
 		grabber.setFormat(format);
 		init();
 	}
+	
+	public FFMPEGIngestor(Dimension resolution, String input) {
+		super(resolution);
+		grabber = new FFmpegFrameGrabber(input);
+		init();
+	}
 
 	public void setVideoCodec(String codec) {
 		grabber.setVideoCodecName(codec);

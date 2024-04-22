@@ -17,6 +17,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import org.bytedeco.javacv.Java2DFrameConverter;
+
 import com.javashell.video.VideoEgress;
 
 public class QOYStreamEgressor extends VideoEgress {
@@ -214,7 +216,7 @@ public class QOYStreamEgressor extends VideoEgress {
 					final int yDelta = getResolution().height / subSegments;
 					byte[][] encodedSubImages = new byte[subSegments][];
 
-					// boolean isKey = framesSinceKey == keyFrameInterval;
+					//boolean isKey = framesSinceKey == keyFrameInterval;
 					boolean isKey = true;
 
 					final int channels = (bufFrame1.getAlphaRaster() != null) ? 4 : 3;
@@ -276,7 +278,9 @@ public class QOYStreamEgressor extends VideoEgress {
 					es.awaitTermination(1, TimeUnit.SECONDS);
 					encodedBuffer0 = encodedSubImages;
 
-					bufFrame0 = bufFrame1;
+					bufFrame0 = null;
+					bufFrame0 = Java2DFrameConverter.cloneBufferedImage(bufFrame1);
+					bufFrame1 = null;
 					synchronized (lock1) {
 						lock1.notify();
 					}

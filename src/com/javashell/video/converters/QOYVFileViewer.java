@@ -2,6 +2,8 @@ package com.javashell.video.converters;
 
 import java.awt.Dimension;
 import java.awt.Graphics;
+import java.awt.GraphicsEnvironment;
+import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
 import java.io.File;
@@ -30,8 +32,26 @@ public class QOYVFileViewer {
 		double frameRate = Double.parseDouble(frameRateDoubleString);
 		int waitTime = (int) (1000 / frameRate);
 
-		final int width = bytesToInt(fin.readNBytes(4));
-		final int height = bytesToInt(fin.readNBytes(4));
+		final int inputWidth = bytesToInt(fin.readNBytes(4));
+		final int inputHeight = bytesToInt(fin.readNBytes(4));
+
+		int frameWidth = inputWidth;
+		int frameHeight = inputHeight;
+
+		Rectangle maxSize = GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds();
+
+		if (maxSize.width < inputWidth) {
+			int ratio = inputWidth / maxSize.width;
+			frameWidth = maxSize.width;
+			frameHeight = inputHeight * ratio;
+		} else if (maxSize.height < inputHeight) {
+			int ratio = inputHeight / maxSize.height;
+			frameHeight = maxSize.height;
+			frameWidth = inputWidth * ratio;
+		}
+
+		final int width = inputWidth;
+		final int height = inputHeight;
 
 		final int subSegments = bytesToInt(fin.readNBytes(4));
 
@@ -62,7 +82,11 @@ public class QOYVFileViewer {
 		Thread decoderThread0 = new Thread(new Runnable() {
 			public void run() {
 				try {
+					long lastTime;
+					long delta = 0;
+					long nextSleep = waitTime;
 					while (fin.available() > 4) {
+						lastTime = System.currentTimeMillis();
 						final byte[][] encoded = new byte[subSegments][];
 						for (int i = 0; i < subSegments; i++) {
 							final int encodedLength = bytesToInt(fin.readNBytes(4));
@@ -75,28 +99,42 @@ public class QOYVFileViewer {
 									((DataBufferByte) bufFrame.getRaster().getDataBuffer()).getData(), 0,
 									decodedImage.length);
 						}
-						Thread.sleep(waitTime - 1, 599999);
+						delta = System.currentTimeMillis() - lastTime;
+
+						if (delta > waitTime)
+							nextSleep = waitTime - delta;
+						else
+							nextSleep = waitTime;
+
+						if (nextSleep < 0)
+							nextSleep = 0;
+
+						Thread.sleep(nextSleep, 0);
 					}
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
 			}
 		});
-		decoderThread0.start();
 
-		previewFrame.setSize(new Dimension(width, height));
+		previewFrame.setSize(new Dimension(frameWidth, frameHeight));
 
 		previewFrame.setVisible(true);
 		previewFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
 		long renderTime = System.currentTimeMillis();
 		long delta;
+		long nextSleep;
+		decoderThread0.start();
 		while (previewFrame.isVisible()) {
 			delta = System.currentTimeMillis() - renderTime;
 			renderTime = System.currentTimeMillis();
 			if (delta > 1000 / 60)
 				System.err.println("Render took " + delta + "ms too long");
-			Thread.sleep(1000 / 60, 0);
+			nextSleep = (1000 / 60) - delta;
+			if (nextSleep < 0)
+				nextSleep = 0;
+			Thread.sleep(nextSleep, 0);
 			previewFrame.repaint();
 		}
 		fin.close();

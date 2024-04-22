@@ -66,7 +66,7 @@ public class QOYStreamIngestor extends VideoIngestor {
 	}
 
 	public QOYStreamIngestor(Dimension resolution, String ip, int port, boolean isMulticast) {
-		this(resolution, ip, port, isMulticast, 2);
+		this(resolution, ip, port, isMulticast, 4);
 	}
 
 	public QOYStreamIngestor() {
@@ -115,6 +115,7 @@ public class QOYStreamIngestor extends VideoIngestor {
 			GraphicsConfiguration gc = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice()
 					.getDefaultConfiguration();
 			bufFrame = new BufferedImage(getResolution().width, getResolution().height, BufferedImage.TYPE_4BYTE_ABGR);
+			curFrame = new BufferedImage(getResolution().width, getResolution().height, BufferedImage.TYPE_4BYTE_ABGR);
 			sock.setReceiveBufferSize(87380);
 			sock.connect(new InetSocketAddress(ip, port));
 			Thread captureThread;
@@ -361,6 +362,7 @@ public class QOYStreamIngestor extends VideoIngestor {
 						System.arraycopy(decodedImage, 0,
 								((DataBufferByte) bufFrame.getRaster().getDataBuffer()).getData(), 0,
 								decodedImage.length);
+						//bufFrame.getGraphics().drawImage(curFrame, 0, 0, null);
 					}
 
 					lastTime = System.nanoTime();
