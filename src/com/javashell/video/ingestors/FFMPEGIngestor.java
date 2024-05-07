@@ -11,7 +11,6 @@ import org.bytedeco.javacv.FFmpegFrameGrabber;
 import org.bytedeco.javacv.FFmpegLogCallback;
 import org.bytedeco.javacv.Frame;
 import org.bytedeco.javacv.Java2DFrameConverter;
-import org.opencv.core.Mat;
 
 import com.javashell.video.VideoIngestor;
 
@@ -29,7 +28,7 @@ public class FFMPEGIngestor extends VideoIngestor {
 
 	static {
 		avutil.av_log_set_level(avutil.AV_LOG_QUIET);
-		// FFmpegLogCallback.set();
+		//FFmpegLogCallback.set();
 	}
 
 	public FFMPEGIngestor(Dimension resolution, InputStream videoInput, String format) {
@@ -67,7 +66,7 @@ public class FFMPEGIngestor extends VideoIngestor {
 		grabber.setFormat(format);
 		init();
 	}
-	
+
 	public FFMPEGIngestor(Dimension resolution, String input) {
 		super(resolution);
 		grabber = new FFmpegFrameGrabber(input);

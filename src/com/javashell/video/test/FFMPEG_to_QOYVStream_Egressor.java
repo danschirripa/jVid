@@ -17,6 +17,7 @@ public class FFMPEG_to_QOYVStream_Egressor {
 		FFMPEGIngestor ingest;
 		int width = 1920, height = 1080;
 		double fps = 30.0;
+		int keyFrameInterval = 60;
 		String codec = "video4linux2", format = "rawvideo";
 		if (args.length > 1) {
 			width = Integer.parseInt(args[1]);
@@ -33,6 +34,9 @@ public class FFMPEG_to_QOYVStream_Egressor {
 				fps = Double.parseDouble(args[5]);
 				System.out.println("At " + fps + " fps");
 			}
+			if (args.length >= 7) {
+				keyFrameInterval = Integer.parseInt(args[6]);
+			}
 		}
 		Dimension resolution = new Dimension(width, height);
 		ingest = new FFMPEGIngestor(resolution, args[0]);
@@ -40,20 +44,21 @@ public class FFMPEG_to_QOYVStream_Egressor {
 		ingest.setOption("input_format", format);
 		ingest.setOption("video_size", width + "x" + height);
 
-		QOYStreamEgressor egress = new QOYStreamEgressor(resolution);
-		//LocalWindowEgressor preview = new LocalWindowEgressor(resolution, false);
+		QOYStreamEgressor egress = new QOYStreamEgressor(resolution, keyFrameInterval);
+		// LocalWindowEgressor preview = new LocalWindowEgressor(resolution, false);
 
 		FlowNode<VideoProcessor> ingressNode = new VideoFlowNode(ingest, null, null);
 		FlowNode<VideoProcessor> egressNode = new VideoFlowNode(egress, ingressNode, null);
-		//FlowNode<VideoProcessor> previewNode = new VideoFlowNode(preview, egressNode, null);
+		// FlowNode<VideoProcessor> previewNode = new VideoFlowNode(preview, egressNode,
+		// null);
 		ingressNode.setEgressDestinationNode(egressNode);
-		//egressNode.setEgressDestinationNode(previewNode);
+		// egressNode.setEgressDestinationNode(previewNode);
 
 		FlowController.registerFlowNode(ingressNode);
 
 		ingest.open();
 		egress.open();
-		//preview.open();
+		// preview.open();
 
 		FlowController.startFlowControl();
 	}

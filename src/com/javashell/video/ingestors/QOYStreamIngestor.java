@@ -66,7 +66,7 @@ public class QOYStreamIngestor extends VideoIngestor {
 	}
 
 	public QOYStreamIngestor(Dimension resolution, String ip, int port, boolean isMulticast) {
-		this(resolution, ip, port, isMulticast, 4);
+		this(resolution, ip, port, isMulticast, 1);
 	}
 
 	public QOYStreamIngestor() {

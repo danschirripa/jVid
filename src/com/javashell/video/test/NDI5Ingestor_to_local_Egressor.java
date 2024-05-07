@@ -17,7 +17,7 @@ public class NDI5Ingestor_to_local_Egressor {
 			ndiName += arg + " ";
 		}
 		ndiName = ndiName.stripTrailing();
-		Dimension resolution = new Dimension(1920, 1080);
+		Dimension resolution = new Dimension(1280, 720);
 		NDI5Ingestor ingest = new NDI5Ingestor(resolution, ndiName);
 		LocalWindowEgressor preview = new LocalWindowEgressor(resolution, false);
 

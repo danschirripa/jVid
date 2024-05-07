@@ -30,7 +30,6 @@ void convertCompare3Channel(uint8_t* current, uint8_t* previous, uint8_t* output
     currIndex += 4;
     prevIndex += 3;
   }
-  printf("%d\n",numSame);
 
 }
 
@@ -68,7 +67,6 @@ void convertCompare4Channel(uint8_t* current, uint8_t* previous, uint8_t* output
 
     currIndex += 4;
   }
-  printf("%d\n",numSame);
 }
 
 void convert4Channel(uint8_t* input, uint8_t* output, size_t totalSize){

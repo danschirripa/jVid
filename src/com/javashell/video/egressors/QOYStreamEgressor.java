@@ -31,7 +31,7 @@ public class QOYStreamEgressor extends VideoEgress {
 	private static long lastTime;
 	private static boolean isRunning;
 	private static final long frameRateInterval = (long) 16.3 * 1000000;
-	private static int keyFrameInterval = 60;
+	private int keyFrameInterval = 60;
 	private Thread serverThread, egressThread, encoderThread1;
 
 	static {
@@ -58,7 +58,12 @@ public class QOYStreamEgressor extends VideoEgress {
 	}
 
 	public QOYStreamEgressor(Dimension resolution) {
+		this(resolution, 60);
+	}
+
+	public QOYStreamEgressor(Dimension resolution, int keyFrameInterval) {
 		super(resolution);
+		this.keyFrameInterval = keyFrameInterval;
 	}
 
 	@Override
@@ -216,8 +221,7 @@ public class QOYStreamEgressor extends VideoEgress {
 					final int yDelta = getResolution().height / subSegments;
 					byte[][] encodedSubImages = new byte[subSegments][];
 
-					//boolean isKey = framesSinceKey == keyFrameInterval;
-					boolean isKey = true;
+					boolean isKey = framesSinceKey == keyFrameInterval;
 
 					final int channels = (bufFrame1.getAlphaRaster() != null) ? 4 : 3;
 					final int subSize = width * yDelta * channels;
@@ -280,7 +284,7 @@ public class QOYStreamEgressor extends VideoEgress {
 
 					bufFrame0 = null;
 					bufFrame0 = Java2DFrameConverter.cloneBufferedImage(bufFrame1);
-					bufFrame1 = null;
+					// bufFrame1 = null;
 					synchronized (lock1) {
 						lock1.notify();
 					}
