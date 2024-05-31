@@ -12,7 +12,8 @@ public class FlowController {
 	private static long averageFrameRateInterval = 0;
 	private static long[] frameRateIntervals = new long[200];
 	private static int frameIndex = 0;
-	private static boolean stopTimer = false;
+	private static boolean stopTimer = false, pauseFlow = false;
+	private static Object stateChangeLock = new Object(), caughtPauseLock = new Object();
 
 	public static void startFlowControl() {
 		if (frameRateTimer.isAlive())
@@ -24,6 +25,34 @@ public class FlowController {
 	public static void stopFlowControl() {
 		if (frameRateTimer.isAlive())
 			stopTimer = true;
+	}
+
+	public static void pauseFlow() {
+		if (pauseFlow)
+			return;
+		synchronized (stateChangeLock) {
+			pauseFlow = true;
+			System.out.println("Flow paused");
+		}
+		try {
+			synchronized (caughtPauseLock) {
+				caughtPauseLock.wait();
+			}
+			Thread.sleep(100);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	public static void resumeFlow() {
+		synchronized (stateChangeLock) {
+			stateChangeLock.notify();
+			System.out.println("Flow resumed");
+		}
+	}
+
+	public static boolean isFlowing() {
+		return frameRateTimer.isAlive();
 	}
 
 	public static void registerFlowNode(FlowNode<VideoProcessor> node) {
@@ -56,6 +85,21 @@ public class FlowController {
 		public void run() {
 			long lastTime = System.nanoTime();
 			while (!stopTimer) {
+				synchronized (stateChangeLock) {
+					if (pauseFlow) {
+						System.out.println("Caught pause");
+						synchronized (caughtPauseLock) {
+							caughtPauseLock.notify();
+						}
+						try {
+							stateChangeLock.wait();
+						} catch (Exception e) {
+							e.printStackTrace();
+						}
+						pauseFlow = false;
+						System.out.println("Caught resume");
+					}
+				}
 				if (System.nanoTime() - lastTime >= frameRateInterval) {
 					lastTime = System.nanoTime();
 					for (FlowNode<VideoProcessor> fn : processors) {

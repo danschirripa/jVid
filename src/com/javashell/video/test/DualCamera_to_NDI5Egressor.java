@@ -34,7 +34,7 @@ public class DualCamera_to_NDI5Egressor {
 
 		// INPUT DEFINITION
 		Camera IP2M_841 = Camera.getCamera("IP2M-841");
-		AmcrestCameraInterface amc = new AmcrestCameraInterface(resolution, "admin", "Enohpoxas98*", "10.42.0.143",
+		AmcrestCameraInterface amc = new AmcrestCameraInterface(resolution, "admin", "Enohpoxas98*", "10.42.0.144",
 				4096000, IP2M_841);
 		FFMPEGIngestor camIn = new FFMPEGIngestor(new Dimension(720, 576), new File("/dev/video2"));
 		FFMPEGIngestor huddlyIn = new FFMPEGIngestor(resolution, new File("/dev/video1"));

@@ -42,7 +42,7 @@ public class MultivewDigest_To_LocalEgressor {
 		Dimension resolution = new Dimension(1920, 1080);
 
 		Camera IP2M_841 = Camera.getCamera("IP2M-841");
-		AmcrestCameraInterface amc = new AmcrestCameraInterface(resolution, "admin", "Enohpoxas98*", "10.42.0.144",
+		AmcrestCameraInterface amc = new AmcrestCameraInterface(resolution, "admin", "Enohpoxas98*", "10.42.0.143",
 				4096000, IP2M_841);
 
 		Camera EVI_D70 = Camera.getCamera("Sony EVI D-70");
@@ -52,7 +52,7 @@ public class MultivewDigest_To_LocalEgressor {
 		// File("/dev/video0"));
 		OpenCVIngestor camIn = new OpenCVIngestor(new Dimension(720, 576), 0);
 		NDI5Ingestor ndiIn = new NDI5Ingestor(resolution, "Ingest1", ndiName);
-		NDI5Ingestor opi3In = new NDI5Ingestor(resolution, "Ingest2", "ORANGEPI3-LTS (jVid)");
+		NDI5Ingestor opi3In = new NDI5Ingestor(resolution, "Ingest2", ndiName);
 
 		OpenCVFaceDetectorDigestor faces = new OpenCVFaceDetectorDigestor(resolution);
 		FaceSetPaintingDigestor facePaint = new FaceSetPaintingDigestor(resolution);

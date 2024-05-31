@@ -11,6 +11,7 @@ public abstract class FlowNode<T> {
 	private final T content;
 	private FlowNode<T> ingestSource, egressDestination;
 	private boolean isIngest = false, isVideo = false;
+	private final Object lock = new Object(), lock1 = new Object();
 	private final UUID nodeId;
 
 	public FlowNode(T content, FlowNode<T> ingestSource, FlowNode<T> egressDestination) {
@@ -39,23 +40,51 @@ public abstract class FlowNode<T> {
 	}
 
 	public void setIngestSourceNode(FlowNode<T> source) {
-		if (ingestSource == null) {
+		if (FlowController.isFlowing()) {
+			FlowController.pauseFlow();
+			if (ingestSource == null) {
+				ingestSource = source;
+				FlowController.resumeFlow();
+				return;
+			}
+			ingestSource.setEgressDestinationNode(null);
 			ingestSource = source;
-			return;
+
+			FlowController.resumeFlow();
+		} else {
+			if (ingestSource == null) {
+				ingestSource = source;
+				FlowController.resumeFlow();
+				return;
+			}
+			ingestSource.setEgressDestinationNode(null);
+			ingestSource = source;
+			FlowController.resumeFlow();
 		}
-		ingestSource.setEgressDestinationNode(null);
-		ingestSource = source;
-		source.setEgressDestinationNode(this);
 	}
 
 	public void setEgressDestinationNode(FlowNode<T> destination) {
-		if (egressDestination == null) {
+		if (FlowController.isFlowing()) {
+			FlowController.pauseFlow();
+			if (egressDestination == null) {
+				egressDestination = destination;
+				FlowController.resumeFlow();
+				return;
+			}
+			egressDestination.setIngestSourceNode(null);
 			egressDestination = destination;
-			return;
+
+			FlowController.resumeFlow();
+		} else {
+			if (egressDestination == null) {
+				egressDestination = destination;
+				FlowController.resumeFlow();
+				return;
+			}
+			egressDestination.setIngestSourceNode(null);
+			egressDestination = destination;
+			FlowController.resumeFlow();
 		}
-		egressDestination.setIngestSourceNode(null);
-		egressDestination = destination;
-		destination.setIngestSourceNode(this);
 	}
 
 	public FlowNode<T> retrieveOrigin() {
@@ -89,7 +118,11 @@ public abstract class FlowNode<T> {
 		if (isIngest) {
 			VideoIngestor vi = (VideoIngestor) content;
 			BufferedImage frame = vi.processFrame(null);
+			if (egressDestination == null) {
+				return;
+			}
 			egressDestination.triggerFrame(this.nodeId, frame);
+
 		} else {
 			VideoProcessor vp = (VideoProcessor) content;
 			if (vp instanceof MultiplexedVideoProcessor) {
@@ -99,6 +132,7 @@ public abstract class FlowNode<T> {
 			BufferedImage frame = vp.processFrame(img);
 			if (egressDestination != null)
 				egressDestination.triggerFrame(this.nodeId, frame);
+
 		}
 	}
 
