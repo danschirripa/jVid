@@ -18,15 +18,22 @@ public class NDI5Ingestor extends VideoIngestor {
 	static {
 		try {
 			String arch = System.getProperty("os.arch");
+			String os   = System.getProperty("os.name", "generic").toLowerCase();
 			String prefix = "amd64";
+			String suffix = ".so";
 			System.out.println(arch);
 			if (arch.equals("aarch64")) {
 				prefix = "aarch64";
 			}
+			System.out.println(os);
+			if(os.indexOf("mac") >= 0 || os.indexOf("darwin") >= 0) {
+				prefix = "darwin";
+				suffix = ".dylib";
+			}
 			System.out.println("Prefix: " + prefix);
 
-			InputStream libNDIDecoderStream = NDI5Egressor.class.getResourceAsStream("/" + prefix + "/libndi.so");
-			File libNDIDecoderFile = File.createTempFile("libndi", ".so");
+			InputStream libNDIDecoderStream = NDI5Egressor.class.getResourceAsStream("/" + prefix + "/libndi" + suffix);
+			File libNDIDecoderFile = File.createTempFile("libndi", suffix);
 			FileOutputStream libNDIDecoderOutputStream = new FileOutputStream(libNDIDecoderFile);
 			libNDIDecoderOutputStream.write(libNDIDecoderStream.readAllBytes());
 			libNDIDecoderOutputStream.flush();
@@ -34,8 +41,8 @@ public class NDI5Ingestor extends VideoIngestor {
 			libNDIDecoderStream.close();
 			System.load(libNDIDecoderFile.getAbsolutePath());
 
-			libNDIDecoderStream = NDI5Egressor.class.getResourceAsStream("/" + prefix + "/libNDIDecoder.so");
-			libNDIDecoderFile = File.createTempFile("libNDIDecoder", ".so");
+			libNDIDecoderStream = NDI5Egressor.class.getResourceAsStream("/" + prefix + "/libNDIDecoder" + suffix);
+			libNDIDecoderFile = File.createTempFile("libNDIDecoder", suffix);
 			libNDIDecoderOutputStream = new FileOutputStream(libNDIDecoderFile);
 			libNDIDecoderOutputStream.write(libNDIDecoderStream.readAllBytes());
 			libNDIDecoderOutputStream.flush();
