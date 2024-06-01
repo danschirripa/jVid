@@ -1066,7 +1066,7 @@ void *qoy_decode(const void *data, int size, qoy_desc *desc, int out_channels, i
         return NULL;
     }
 
-    unsigned char *pixels = (unsigned char *) QOY_MALLOC(out_format == QOY_FORMAT_YCBCR420A ? qoy_ycbcra_size(desc->width, desc->height, out_channels) : desc->width * desc->height * out_channels);
+    unsigned char *pixels = (unsigned char *)QOY_MALLOC(out_format == QOY_FORMAT_YCBCR420A ? qoy_ycbcra_size(desc->width, desc->height, out_channels) : desc->width * desc->height * out_channels);
     if (!pixels) {
         return NULL;
     }
