@@ -37,14 +37,21 @@ public class QOYStreamEgressor extends VideoEgress {
 	static {
 		try {
 			String arch = System.getProperty("os.arch");
+			String os   = System.getProperty("os.name", "generic").toLowerCase();
 			String prefix = "amd64";
+			String suffix = ".so";
 			System.out.println(arch);
 			if (arch.equals("aarch64")) {
 				prefix = "aarch64";
 			}
+			System.out.println(os);
+			if(os.indexOf("mac") >= 0 || os.indexOf("darwin") >= 0) {
+				prefix = "darwin";
+				suffix = ".dylib";
+			}
 			InputStream libQOYEncoderStream = QOYStreamEgressor.class
-					.getResourceAsStream("/" + prefix + "/libQOYEncoder.so");
-			File libQOYEncoderFile = File.createTempFile("libQOYEncoder", ".so");
+					.getResourceAsStream("/" + prefix + "/libQOYEncoder" + suffix);
+			File libQOYEncoderFile = File.createTempFile("libQOYEncoder", suffix);
 			FileOutputStream libQOYEncoderOutputStream = new FileOutputStream(libQOYEncoderFile);
 			libQOYEncoderOutputStream.write(libQOYEncoderStream.readAllBytes());
 			libQOYEncoderOutputStream.flush();

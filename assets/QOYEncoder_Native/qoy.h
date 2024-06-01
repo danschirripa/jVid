@@ -855,7 +855,7 @@ void *qoy_encode(const void *data, const qoy_desc *desc, int *out_len, int in_ch
 
     int run = 0;
     int size_ycbcra = (in_channels == 4) ? 10 : 6;
-    unsigned char *buffer = (in_format != QOY_FORMAT_YCBCR420A) ? QOY_MALLOC(qoy_ycbcra_size(desc->width, desc->height, desc->channels)) : (unsigned char*)pixels;
+    unsigned char *buffer = (unsigned char*) ((in_format != QOY_FORMAT_YCBCR420A) ? QOY_MALLOC(qoy_ycbcra_size(desc->width, desc->height, desc->channels)) : (unsigned char*)pixels);
     for (int y = 0; y < internal_height; y += 2) {
         if (in_format != QOY_FORMAT_YCBCR420A) {
             qoy_rgba_to_ycbcra_two_lines(
@@ -1066,7 +1066,7 @@ void *qoy_decode(const void *data, int size, qoy_desc *desc, int out_channels, i
         return NULL;
     }
 
-    unsigned char *pixels = (unsigned char *)QOY_MALLOC(out_format == QOY_FORMAT_YCBCR420A ? qoy_ycbcra_size(desc->width, desc->height, out_channels) : desc->width * desc->height * out_channels);
+    unsigned char *pixels = (unsigned char *) QOY_MALLOC(out_format == QOY_FORMAT_YCBCR420A ? qoy_ycbcra_size(desc->width, desc->height, out_channels) : desc->width * desc->height * out_channels);
     if (!pixels) {
         return NULL;
     }
@@ -1080,7 +1080,7 @@ void *qoy_decode(const void *data, int size, qoy_desc *desc, int out_channels, i
     int run = 0;
     int size_ycbcra = (out_channels == 4) ? 10 : 6;
     int chunks_len = size - (int)sizeof(qoy_padding);
-    unsigned char *buffer = (out_format != QOY_FORMAT_YCBCR420A) ? QOY_MALLOC(qoy_ycbcra_size(desc->width, desc->height, out_channels)) : (unsigned char *)pixels;
+    unsigned char *buffer = (unsigned char*) ((out_format != QOY_FORMAT_YCBCR420A) ? QOY_MALLOC(qoy_ycbcra_size(desc->width, desc->height, out_channels)) : (unsigned char *)pixels);
     for (int y = 0; y < internal_height; y += 2) {
         unsigned char *px_write = buffer;
         for (int x = 0; x < internal_width >> 1; x++, px_write += size_ycbcra) {

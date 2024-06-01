@@ -45,14 +45,21 @@ public class QOYStreamIngestor extends VideoIngestor {
 	static {
 		try {
 			String arch = System.getProperty("os.arch");
+			String os   = System.getProperty("os.name", "generic").toLowerCase();
 			String prefix = "amd64";
+			String suffix = ".so";
 			System.out.println(arch);
 			if (arch.equals("aarch64")) {
 				prefix = "aarch64";
 			}
+			System.out.println(os);
+			if(os.indexOf("mac") >= 0 || os.indexOf("darwin") >= 0) {
+				prefix = "darwin";
+				suffix = ".dylib";
+			}
 			InputStream libQOYDecoderStream = QOYStreamIngestor.class
-					.getResourceAsStream("/" + prefix + "/libQOYDecoder.so");
-			File libQOYDecoderFile = File.createTempFile("libQOYDecoder", ".so");
+					.getResourceAsStream("/" + prefix + "/libQOYDecoder" + suffix);
+			File libQOYDecoderFile = File.createTempFile("libQOYDecoder", suffix);
 			FileOutputStream libQOYDecoderOutputStream = new FileOutputStream(libQOYDecoderFile);
 			libQOYDecoderOutputStream.write(libQOYDecoderStream.readAllBytes());
 			libQOYDecoderOutputStream.flush();

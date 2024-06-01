@@ -30,8 +30,6 @@ public class NDI5Ingestor extends VideoIngestor {
 				prefix = "darwin";
 				suffix = ".dylib";
 			}
-			System.out.println("Prefix: " + prefix);
-
 			InputStream libNDIDecoderStream = NDI5Egressor.class.getResourceAsStream("/" + prefix + "/libndi" + suffix);
 			File libNDIDecoderFile = File.createTempFile("libndi", suffix);
 			FileOutputStream libNDIDecoderOutputStream = new FileOutputStream(libNDIDecoderFile);
