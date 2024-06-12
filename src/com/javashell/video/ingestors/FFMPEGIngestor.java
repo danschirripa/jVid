@@ -28,7 +28,7 @@ public class FFMPEGIngestor extends VideoIngestor {
 
 	static {
 		avutil.av_log_set_level(avutil.AV_LOG_QUIET);
-		//FFmpegLogCallback.set();
+		// FFmpegLogCallback.set();
 	}
 
 	public FFMPEGIngestor(Dimension resolution, InputStream videoInput, String format) {

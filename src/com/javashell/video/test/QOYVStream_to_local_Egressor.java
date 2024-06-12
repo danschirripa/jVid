@@ -12,7 +12,7 @@ import com.javashell.video.ingestors.QOYStreamIngestor;
 
 public class QOYVStream_to_local_Egressor {
 	public static void main(String[] args) throws MalformedURLException {
-		Dimension resolution = new Dimension(1920, 1080);
+		Dimension resolution = new Dimension(1280, 720);
 		QOYStreamIngestor ingest = new QOYStreamIngestor(resolution, args[0], 4500, false);
 		LocalWindowEgressor preview = new LocalWindowEgressor(resolution);
 
