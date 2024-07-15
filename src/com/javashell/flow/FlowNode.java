@@ -47,7 +47,7 @@ public abstract class FlowNode<T> {
 				FlowController.resumeFlow();
 				return;
 			}
-			ingestSource.setEgressDestinationNode(null);
+
 			ingestSource = source;
 
 			FlowController.resumeFlow();
@@ -71,7 +71,6 @@ public abstract class FlowNode<T> {
 				FlowController.resumeFlow();
 				return;
 			}
-			egressDestination.setIngestSourceNode(null);
 			egressDestination = destination;
 
 			FlowController.resumeFlow();

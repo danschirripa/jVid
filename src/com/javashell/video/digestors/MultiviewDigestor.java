@@ -24,7 +24,7 @@ public class MultiviewDigestor extends MultiplexedVideoProcessor {
 		this.cols = col;
 		idIndices = new UUID[viewports];
 		multiplexedFrame = new BufferedImage(resolution.width, resolution.height, BufferedImage.TYPE_4BYTE_ABGR);
-	}
+	} 
 
 	@Override
 	public BufferedImage processFrame(BufferedImage frame) {
