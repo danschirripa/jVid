@@ -67,10 +67,6 @@ public class NDI5Egressor extends VideoEgress {
 		this(resolution, "jVid");
 	}
 
-	private void loadLibNDIEncoder() {
-
-	}
-
 	@Override
 	public BufferedImage processFrame(BufferedImage frame) {
 		curFrame = frame;
