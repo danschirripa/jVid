@@ -60,6 +60,10 @@ public class FlowController {
 			processors.add(node);
 	}
 
+	public static void registerUncheckedFlowNode(FlowNode<VideoProcessor> node) {
+		processors.add(node);
+	}
+
 	public static void unregisterFlowNode(FlowNode<VideoProcessor> node) {
 		processors.remove(node);
 	}

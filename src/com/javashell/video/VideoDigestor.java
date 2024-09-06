@@ -3,6 +3,8 @@ package com.javashell.video;
 import java.awt.Dimension;
 import java.awt.image.BufferedImage;
 
+import com.javashell.audio.JackAudioDigestor;
+
 public abstract class VideoDigestor implements VideoProcessor {
 	private final Dimension resolution;
 

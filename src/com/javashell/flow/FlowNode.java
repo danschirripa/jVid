@@ -3,6 +3,7 @@ package com.javashell.flow;
 import java.awt.image.BufferedImage;
 import java.util.UUID;
 
+import com.javashell.audio.AudioProcessor;
 import com.javashell.video.MultiplexedVideoProcessor;
 import com.javashell.video.VideoIngestor;
 import com.javashell.video.VideoProcessor;
@@ -10,8 +11,8 @@ import com.javashell.video.VideoProcessor;
 public abstract class FlowNode<T> {
 	private final T content;
 	private FlowNode<T> ingestSource, egressDestination;
-	private boolean isIngest = false, isVideo = false;
-	private final Object lock = new Object(), lock1 = new Object();
+	private boolean isIngest = false, isVideo = false, isAudio = false;
+	// private final Object lock = new Object(), lock1 = new Object();
 	private final UUID nodeId;
 
 	public FlowNode(T content, FlowNode<T> ingestSource, FlowNode<T> egressDestination) {
@@ -24,6 +25,10 @@ public abstract class FlowNode<T> {
 		}
 		if (content instanceof VideoProcessor) {
 			isVideo = true;
+		}
+
+		if (content instanceof AudioProcessor) {
+			isAudio = true;
 		}
 	}
 
@@ -121,7 +126,6 @@ public abstract class FlowNode<T> {
 				return;
 			}
 			egressDestination.triggerFrame(this.nodeId, frame);
-
 		} else {
 			VideoProcessor vp = (VideoProcessor) content;
 			if (vp instanceof MultiplexedVideoProcessor) {
@@ -131,7 +135,6 @@ public abstract class FlowNode<T> {
 			BufferedImage frame = vp.processFrame(img);
 			if (egressDestination != null)
 				egressDestination.triggerFrame(this.nodeId, frame);
-
 		}
 	}
 

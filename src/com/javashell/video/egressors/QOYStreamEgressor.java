@@ -37,7 +37,7 @@ public class QOYStreamEgressor extends VideoEgress {
 	static {
 		try {
 			String arch = System.getProperty("os.arch");
-			String os   = System.getProperty("os.name", "generic").toLowerCase();
+			String os = System.getProperty("os.name", "generic").toLowerCase();
 			String prefix = "amd64";
 			String suffix = ".so";
 			System.out.println(arch);
@@ -45,7 +45,7 @@ public class QOYStreamEgressor extends VideoEgress {
 				prefix = "aarch64";
 			}
 			System.out.println(os);
-			if(os.indexOf("mac") >= 0 || os.indexOf("darwin") >= 0) {
+			if (os.indexOf("mac") >= 0 || os.indexOf("darwin") >= 0) {
 				prefix = "darwin";
 				suffix = ".dylib";
 			}
@@ -62,6 +62,10 @@ public class QOYStreamEgressor extends VideoEgress {
 			e.printStackTrace();
 			System.exit(-1);
 		}
+	}
+
+	public QOYStreamEgressor() {
+		super(new Dimension(1920, 1080));
 	}
 
 	public QOYStreamEgressor(Dimension resolution) {
@@ -137,7 +141,7 @@ public class QOYStreamEgressor extends VideoEgress {
 		final int subSize = width * yDelta * channels;
 
 		if (preImg == null)
-			preImg = new BufferedImage(width, yDelta, curImg.getType());
+			preImg = new BufferedImage(width, curImg.getHeight(), curImg.getType());
 
 		final DataBuffer currentBuf = curImg.getRaster().getDataBuffer();
 		final DataBuffer previousBuf = preImg.getRaster().getDataBuffer();
@@ -165,10 +169,13 @@ public class QOYStreamEgressor extends VideoEgress {
 		for (int i = 0; i < subSegments; i++) {
 			final int index = i;
 			if (currentBuf instanceof DataBufferByte) {
-				final byte[] frameBytes = Arrays.copyOfRange(currentBytes, index * subSize,
-						(index * subSize) + subSize);
-				final byte[] prevBytes = Arrays.copyOfRange(previousBytes, index * subSize,
-						(index * subSize) + subSize);
+				final int to, from;
+
+				from = (index * subSize);
+				to = ((index * subSize) + subSize);
+
+				final byte[] frameBytes = Arrays.copyOfRange(currentBytes, from, to);
+				final byte[] prevBytes = Arrays.copyOfRange(previousBytes, from, to);
 				es.execute(new Runnable() {
 					public void run() {
 						encoded[index] = encodeB(frameBytes, prevBytes, width, yDelta, channels, 0, isKey);
