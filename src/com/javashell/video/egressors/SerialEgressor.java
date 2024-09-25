@@ -30,9 +30,19 @@ public class SerialEgressor implements ControlInterface {
 
 	@Override
 	public void processControl(Object obj) {
+		System.out.println("PROCESS: " + obj.getClass());
 		if (obj instanceof byte[]) {
 			byte[] out = (byte[]) obj;
-			 tty.writeBytes(out, out.length);
+			tty.writeBytes(out, out.length);
+		}
+		if (obj.getClass().isAssignableFrom(byte.class) || obj.getClass().isAssignableFrom(int.class)) {
+			int bytes = tty.writeBytes(new byte[] { (byte) obj }, 1);
+			//System.out.println("WROTE " + bytes);
+		}
+		if (obj instanceof Integer) {
+			byte b = ((Integer) obj).byteValue();
+			int bytes = tty.writeBytes(new byte[] { (byte) b }, 1);
+			//System.out.println("WROTE " + bytes);
 		}
 		if (obj instanceof String) {
 			String out = (String) obj;

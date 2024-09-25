@@ -36,8 +36,12 @@ public class VISCAControlInterface implements PTZControlInterface {
 		byte[] ptCommand = VISCA.relativePtCommand(pan, tilt, (byte) 0x18);
 		byte[] zCommand = VISCA.zoomCommand(((zoom > 0) ? VISCA.PTZ_IN : VISCA.PTZ_OUT),
 				(zoom == 0 ? (byte) 0x0 : (byte) zoom));
+		if (pan == 0 && tilt == 0)
+			ptCommand = VISCA.PT_STOP;
+		if (zoom == 0)
+			zCommand = VISCA.Z_STOP;
 		for (ControlInterface cf : interfaces) {
-			cf.processControl(VISCA.Z_STOP);
+			// cf.processControl(VISCA.Z_STOP);
 			cf.processControl(ptCommand);
 			cf.processControl(zCommand);
 		}
