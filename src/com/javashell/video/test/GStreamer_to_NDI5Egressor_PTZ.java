@@ -78,7 +78,6 @@ public class GStreamer_to_NDI5Egressor_PTZ {
 			}
 		});
 		viscaOverIPThread.start();
-
 		FlowController.registerFlowNode(ingressNode);
 
 		ingest.open();
