@@ -93,11 +93,8 @@ public class QOYVFileViewer {
 							encoded[i] = fin.readNBytes(encodedLength);
 						}
 
-						final byte[] decodedImage = qoy.convertToBytes(encoded, width, height, subSegments);
 						synchronized (bufFrame) {
-							System.arraycopy(decodedImage, 0,
-									((DataBufferByte) bufFrame.getRaster().getDataBuffer()).getData(), 0,
-									decodedImage.length);
+							bufFrame = qoy.convert(encoded, width, height, subSegments);
 						}
 						delta = System.currentTimeMillis() - lastTime;
 

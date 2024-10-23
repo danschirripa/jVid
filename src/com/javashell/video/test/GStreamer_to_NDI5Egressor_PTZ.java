@@ -29,17 +29,17 @@ public class GStreamer_to_NDI5Egressor_PTZ {
 		GStreamerIngestor ingest = new GStreamerIngestor(resolution, "v4l2src device=\"" + devPath + "\" ! " + format
 				+ ", width=" + width + ", height=" + height + ", framerate=" + framerate + "/1 ! " + decoder);
 		NDI5Egressor ndi = new NDI5Egressor(resolution, "jVid");
-		PTZFullScreenEgressor egress = new PTZFullScreenEgressor(resolution);
+		//PTZFullScreenEgressor egress = new PTZFullScreenEgressor(resolution);
 
 		FlowNode<VideoProcessor> ingressNode = new VideoFlowNode(ingest, null, null);
 		FlowNode<VideoProcessor> ndiNode = new VideoFlowNode(ndi, ingressNode, null);
-		FlowNode<VideoProcessor> egressNode = new VideoFlowNode(egress, ndiNode, null);
+		//FlowNode<VideoProcessor> egressNode = new VideoFlowNode(egress, ndiNode, null);
 		ingressNode.setEgressDestinationNode(ndiNode);
-		ndiNode.setEgressDestinationNode(egressNode);
+		//ndiNode.setEgressDestinationNode(egressNode);
 
 		SerialEgressor serialPort = new SerialEgressor(SerialPort.getCommPort("/dev/ttyUSB0"));
 
-		egress.addSubscriber(serialPort);
+		//egress.addSubscriber(serialPort);
 
 		Thread viscaOverIPThread = new Thread(new Runnable() {
 			public void run() {
@@ -82,7 +82,7 @@ public class GStreamer_to_NDI5Egressor_PTZ {
 
 		ingest.open();
 		ndi.open();
-		egress.open();
+		//egress.open();
 
 		FlowController.startFlowControl();
 	}

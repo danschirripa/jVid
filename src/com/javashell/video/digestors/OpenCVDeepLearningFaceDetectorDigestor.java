@@ -30,7 +30,7 @@ public class OpenCVDeepLearningFaceDetectorDigestor extends VideoDigestor implem
 	private int digestionOffset = 10;
 	private int digestionOffsetIndex = 0;
 	private Thread analyzationThread;
-	private Mat frame = null;
+	private BufferedImage bufFrame = null;
 	private double distanceRange = 300;
 	private HashSet<ControlInterface> controllers;
 	private Point lastCenterPoint;
@@ -68,7 +68,7 @@ public class OpenCVDeepLearningFaceDetectorDigestor extends VideoDigestor implem
 
 	private Runnable autoTrackRunnable = new Runnable() {
 		public void run() {
-			autoTrack(frame);
+			autoTrack(bufferedImageToMat(bufFrame));
 		}
 	};
 
@@ -127,6 +127,7 @@ public class OpenCVDeepLearningFaceDetectorDigestor extends VideoDigestor implem
 			}
 		}
 		lastCenterPoint = centerPoint;
+		System.out.println("Face center at " + centerPoint.toString());
 		FaceSet faceSet = new FaceSet(facesArray, face);
 		for (ControlInterface cf : controllers) {
 			cf.processControl(faceSet);
@@ -140,7 +141,7 @@ public class OpenCVDeepLearningFaceDetectorDigestor extends VideoDigestor implem
 		if (frame == null || !doTrack)
 			return frame;
 		if (digestionOffsetIndex == digestionOffset) {
-			this.frame = bufferedImageToMat(frame);
+			this.bufFrame = frame;
 			analyzationThread = new Thread(autoTrackRunnable);
 			analyzationThread.start();
 			digestionOffsetIndex = 0;
